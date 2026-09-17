@@ -229,6 +229,19 @@ automatiquement :
 - Texte brut d'octets hexadécimaux séparés par des espaces (même format que
   le champ de collage).
 
+**Importer directement une image du signal (🖼️)** est aussi possible, mais
+c'est fondamentalement une estimation, pas une lecture exacte : l'app repère
+la couleur de fond de l'image (coins) puis, colonne par colonne, la position
+verticale des pixels qui en diffèrent (la trace), et convertit cette
+position en valeur 0-255 en supposant que **le bas de l'image vaut 0 et le
+haut vaut 255** (modifiable via les deux champs qui apparaissent après
+l'import, avec un bouton « ↻ Recalculer » si l'image source utilise une
+autre échelle). Un graphique de la courbe extraite s'affiche pour
+vérification visuelle avant de classer — ne jamais faire confiance à
+l'extraction sans regarder ce graphique. Fonctionne bien sur une image nette
+à fond uni (export de ce projet, capture d'écran propre) ; peu fiable sur
+une photo (angle, éclairage, reflets).
+
 ## Sécurité et limites
 
 - La clé API protège contre un envoi accidentel ou trivial depuis un autre

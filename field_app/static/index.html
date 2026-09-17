@@ -104,8 +104,19 @@
         <div class="test-import-row">
           <button type="button" class="btn-secondary" id="testImportButton" data-i18n="test_import_button">📁 Importer un fichier</button>
           <input type="file" id="testFileInput" accept=".txt,.json,.jsonl,.csv" hidden>
+          <button type="button" class="btn-secondary" id="testImportImageButton" data-i18n="test_import_image_button">🖼️ Importer une image du signal</button>
+          <input type="file" id="testImageInput" accept="image/*" hidden>
           <span id="testImportName" class="hint"></span>
         </div>
+        <div class="test-scale-row" id="testScaleRow" hidden>
+          <label for="testScaleBottom" data-i18n="test_scale_bottom">Valeur en bas de l'image</label>
+          <input type="number" id="testScaleBottom" value="0" min="0" max="255">
+          <label for="testScaleTop" data-i18n="test_scale_top">Valeur en haut de l'image</label>
+          <input type="number" id="testScaleTop" value="255" min="0" max="255">
+          <button type="button" class="btn-secondary" id="testRedigitize" data-i18n="test_redigitize">↻ Recalculer</button>
+        </div>
+        <p class="hint warn-hint" id="testImagePreviewHint" hidden data-i18n="test_image_warning">⚠️ Extraction approximative depuis l'image — vérifiez que la courbe ci-dessous correspond bien au signal avant de classer.</p>
+        <canvas id="testImagePreview" class="test-image-preview" width="512" height="120" hidden></canvas>
         <textarea id="testInput" rows="4" placeholder="B0 B9 B5 A0 90 81 69 64 ..."></textarea>
         <div class="test-target-row">
           <label for="testTarget" data-i18n="test_target_label">Cible à simuler</label>

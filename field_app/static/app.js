@@ -36,6 +36,12 @@
       test_hint: "Coller 512 octets hexadécimaux séparés par des espaces (ex. issus de l'app de démonstration).",
       test_import_button: "📁 Importer un fichier",
       test_error_import: "Fichier illisible — formats acceptés : .txt brut du capteur (« Triggered:... »), JSON ({\"values\":[...]}), ou octets hexadécimaux séparés par des espaces.",
+      test_import_image_button: "🖼️ Importer une image du signal",
+      test_image_warning: "⚠️ Extraction approximative depuis l'image — vérifiez que la courbe ci-dessous correspond bien au signal avant de classer.",
+      test_error_image: "Impossible d'extraire une courbe de cette image (aucune ligne détectée sur fond uni).",
+      test_scale_bottom: "Valeur en bas de l'image",
+      test_scale_top: "Valeur en haut de l'image",
+      test_redigitize: "↻ Recalculer",
       test_target_label: "Cible à simuler",
       test_target_generic: "Test générique (aucune cible)",
       test_button: "Classer cette forme d'onde",
@@ -94,6 +100,12 @@
       test_hint: "Paste 512 hexadecimal bytes separated by spaces (e.g. from the demo app).",
       test_import_button: "📁 Import a file",
       test_error_import: "Unreadable file — accepted formats: raw sensor .txt (\"Triggered:...\"), JSON ({\"values\":[...]}), or hexadecimal bytes separated by spaces.",
+      test_import_image_button: "🖼️ Import a signal image",
+      test_image_warning: "⚠️ Approximate extraction from the image — check that the curve below actually matches the signal before classifying.",
+      test_error_image: "Could not extract a curve from this image (no line detected on a solid background).",
+      test_scale_bottom: "Value at bottom of image",
+      test_scale_top: "Value at top of image",
+      test_redigitize: "↻ Recompute",
       test_target_label: "Target to simulate",
       test_target_generic: "Generic test (no target)",
       test_button: "Classify this waveform",
@@ -155,6 +167,15 @@
   const testImportButton = document.getElementById("testImportButton");
   const testFileInput = document.getElementById("testFileInput");
   const testImportName = document.getElementById("testImportName");
+  const testImportImageButton = document.getElementById("testImportImageButton");
+  const testImageInput = document.getElementById("testImageInput");
+  const testImagePreview = document.getElementById("testImagePreview");
+  const testImagePreviewCtx = testImagePreview.getContext("2d");
+  const testImagePreviewHint = document.getElementById("testImagePreviewHint");
+  const testScaleRow = document.getElementById("testScaleRow");
+  const testScaleBottom = document.getElementById("testScaleBottom");
+  const testScaleTop = document.getElementById("testScaleTop");
+  const testRedigitize = document.getElementById("testRedigitize");
   const testTarget = document.getElementById("testTarget");
   const testSubmit = document.getElementById("testSubmit");
   const testError = document.getElementById("testError");
@@ -171,6 +192,7 @@
   let targetsList = [];
   let targetLastResult = {};
   let selectedTargetId = null; // null = suit automatiquement le dernier evenement, quelle que soit la cible
+  let lastImportedImageData = null; // ImageData de la derniere image importee, pour "Recalculer"
 
   function fmtTime(iso) {
     if (!iso) return "";
@@ -185,28 +207,32 @@
     return t("ago_minutes", { n: Math.round(seconds / 60) });
   }
 
-  function drawWave(values) {
-    const w = canvas.width, h = canvas.height;
-    ctx.clearRect(0, 0, w, h);
+  function drawWaveOn(targetCtx, targetCanvas, values, strokeColor) {
+    const w = targetCanvas.width, h = targetCanvas.height;
+    targetCtx.clearRect(0, 0, w, h);
     if (!values || !values.length) return;
 
-    ctx.strokeStyle = "rgba(255,255,255,0.06)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, h / 2);
-    ctx.lineTo(w, h / 2);
-    ctx.stroke();
+    targetCtx.strokeStyle = "rgba(255,255,255,0.06)";
+    targetCtx.lineWidth = 1;
+    targetCtx.beginPath();
+    targetCtx.moveTo(0, h / 2);
+    targetCtx.lineTo(w, h / 2);
+    targetCtx.stroke();
 
-    const isAlert = statusCard.dataset.state === "alert";
-    ctx.strokeStyle = isAlert ? "#e05a4d" : "#8fae5d";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
+    targetCtx.strokeStyle = strokeColor;
+    targetCtx.lineWidth = 2;
+    targetCtx.beginPath();
     values.forEach((v, i) => {
       const x = (i / (values.length - 1)) * w;
       const y = h - (v / 255) * h;
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      i === 0 ? targetCtx.moveTo(x, y) : targetCtx.lineTo(x, y);
     });
-    ctx.stroke();
+    targetCtx.stroke();
+  }
+
+  function drawWave(values) {
+    const isAlert = statusCard.dataset.state === "alert";
+    drawWaveOn(ctx, canvas, values, isAlert ? "#e05a4d" : "#8fae5d");
   }
 
   function setConnState(state, labelKey) {
@@ -513,11 +539,19 @@
 
   testImportButton.addEventListener("click", () => testFileInput.click());
 
+  function hideImagePreview() {
+    testImagePreview.hidden = true;
+    testImagePreviewHint.hidden = true;
+    testScaleRow.hidden = true;
+  }
+
   testFileInput.addEventListener("change", async () => {
     const file = testFileInput.files[0];
     testFileInput.value = "";
     if (!file) return;
     testError.textContent = "";
+    lastImportedImageData = null;
+    hideImagePreview();
     testImportName.textContent = file.name;
     try {
       const text = await file.text();
@@ -531,6 +565,109 @@
       testError.textContent = t("test_error_import");
     }
   });
+
+  /**
+   * Digitalisation approximative d'une courbe tracee sur fond uni : la
+   * couleur de fond est estimee a partir des quatre coins de l'image, puis
+   * pour chaque colonne on moyenne la position verticale des pixels qui en
+   * different significativement (la trace). Les colonnes sans trace
+   * detectee reprennent la derniere valeur connue.
+   *
+   * Calibration : la valeur est interpolee entre `bottomValue` (bas de
+   * l'image) et `topValue` (haut de l'image) — PAS sur l'etendue verticale
+   * observee de la trace elle-meme, qui sous-estimerait fortement une
+   * ligne de base plate avec un pic isole (verifie empiriquement : erreur
+   * moyenne ~120/255 avec l'etendue de la trace, ~0 avec la hauteur totale
+   * de l'image, sur un signal de test connu). Par defaut 0-255 (pleine
+   * hauteur = plage ADC complete, comme les graphiques generes par ce
+   * projet) ; a corriger dans l'UI si l'image source utilise une autre
+   * echelle — c'est une estimation a verifier visuellement, pas une
+   * lecture exacte.
+   */
+  function digitizeImageData(imgData, bottomValue = 0, topValue = 255) {
+    const { data, width, height } = imgData;
+    const at = (x, y) => {
+      const i = (y * width + x) * 4;
+      return [data[i], data[i + 1], data[i + 2]];
+    };
+    const corners = [at(0, 0), at(width - 1, 0), at(0, height - 1), at(width - 1, height - 1)];
+    const bg = [0, 1, 2].map((c) => Math.round(corners.reduce((s, p) => s + p[c], 0) / 4));
+    const dist = (p) => Math.sqrt((p[0] - bg[0]) ** 2 + (p[1] - bg[1]) ** 2 + (p[2] - bg[2]) ** 2);
+    const THRESHOLD = 45;
+
+    const rows = new Array(width).fill(null);
+    for (let x = 0; x < width; x++) {
+      let sum = 0, count = 0;
+      for (let y = 0; y < height; y++) {
+        if (dist(at(x, y)) > THRESHOLD) { sum += y; count++; }
+      }
+      if (count) rows[x] = sum / count;
+    }
+
+    let last = rows.find((r) => r != null);
+    if (last == null) return null; // aucune trace detectee du tout
+    for (let x = 0; x < width; x++) {
+      if (rows[x] == null) rows[x] = last;
+      else last = rows[x];
+    }
+
+    const resampled = [];
+    for (let i = 0; i < 512; i++) {
+      const srcX = Math.min(width - 1, Math.floor((i / 511) * (width - 1)));
+      resampled.push(rows[srcX]);
+    }
+
+    return resampled.map((r) => {
+      const frac = 1 - r / Math.max(1, height - 1); // 0 en bas de l'image, 1 en haut
+      const v = bottomValue + frac * (topValue - bottomValue);
+      return Math.max(0, Math.min(255, Math.round(v)));
+    });
+  }
+
+  function runDigitization() {
+    if (!lastImportedImageData) return;
+    const bottom = Number(testScaleBottom.value) || 0;
+    const top = Number(testScaleTop.value) || 0;
+    const values = digitizeImageData(lastImportedImageData, bottom, top);
+    if (!values) {
+      testError.textContent = t("test_error_image");
+      hideImagePreview();
+      return;
+    }
+    testError.textContent = "";
+    testInput.value = values.map((v) => v.toString(16).padStart(2, "0").toUpperCase()).join(" ");
+    testImagePreview.hidden = false;
+    testImagePreviewHint.hidden = false;
+    testScaleRow.hidden = false;
+    drawWaveOn(testImagePreviewCtx, testImagePreview, values, "#d9a441");
+  }
+
+  testImportImageButton.addEventListener("click", () => testImageInput.click());
+
+  testImageInput.addEventListener("change", async () => {
+    const file = testImageInput.files[0];
+    testImageInput.value = "";
+    if (!file) return;
+    testError.textContent = "";
+    testImportName.textContent = file.name;
+    try {
+      const bitmap = await createImageBitmap(file);
+      const off = document.createElement("canvas");
+      off.width = bitmap.width;
+      off.height = bitmap.height;
+      const octx = off.getContext("2d");
+      octx.drawImage(bitmap, 0, 0);
+      lastImportedImageData = octx.getImageData(0, 0, off.width, off.height);
+      runDigitization();
+    } catch {
+      lastImportedImageData = null;
+      testError.textContent = t("test_error_image");
+      hideImagePreview();
+      testScaleRow.hidden = true;
+    }
+  });
+
+  testRedigitize.addEventListener("click", runDigitization);
 
   testSubmit.addEventListener("click", async () => {
     testError.textContent = "";
