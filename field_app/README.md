@@ -143,6 +143,31 @@ mais celle affichée dans les paramètres du point d'accès de la tablette
 `ipconfig` comme à l'étape 2. C'est l'option la plus simple à déployer sur
 le terrain : aucune dépendance à un routeur tiers.
 
+## Stockage des captures et amélioration des modèles
+
+Chaque capture reçue (RPi ou test manuel) est enregistrée durablement dans
+`data/captures.jsonl` (forme d'onde brute + prédiction), et chaque
+validation d'un opérateur dans `data/confirmations.jsonl` — deux fichiers en
+ajout seul (jamais réécrits), qui survivent aux redémarrages, contrairement
+à l'historique affiché dans l'UI (limité aux 50 derniers, en mémoire).
+
+**Point important : la prédiction seule n'est pas une vérité terrain.**
+Réentraîner les modèles directement sur leurs propres prédictions non
+vérifiées leur ferait apprendre leurs propres erreurs plutôt que de
+s'améliorer — c'est exactement pour ça que chaque ligne de l'historique a un
+bouton **Vérifier** : un opérateur confirme (« c'était bien ça ») ou corrige
+(« c'était en fait un G36 », « ce n'était pas un tir ») ce que le modèle a
+proposé. Seules les captures avec une entrée correspondante dans
+`confirmations.jsonl` constituent une donnée labellisée exploitable.
+
+Pour effectivement réentraîner les modèles sur ces données de terrain
+vérifiées, il faut les convertir au format attendu par
+`src/data/parse_raw.py` / `data/raw/incoming/` (voir `CAHIER_DES_CHARGES.md`
+section 4) — ce n'est pas automatique aujourd'hui : `captures.jsonl` +
+`confirmations.jsonl` ne portent pas les métadonnées du protocole d'origine
+(distance, mode, session). C'est une extension distincte, pas encore
+construite — demandez si vous voulez qu'on l'ajoute.
+
 ## Vérifier que tout fonctionne sans capteur
 
 Le panneau **🧪 Test manuel** de l'interface permet de coller 512 octets

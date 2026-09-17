@@ -37,6 +37,18 @@
       ago_now: "à l'instant",
       ago_seconds: "il y a {n}s",
       ago_minutes: "il y a {n} min",
+      th_verified: "Vérifié",
+      verify_hint: "Cliquez sur « Vérifier » pour confirmer ou corriger une classification — seules les captures vérifiées par un opérateur sont utilisables pour améliorer les modèles.",
+      verify_button: "Vérifier",
+      verify_confirmed: "✅ Confirmé",
+      verify_corrected: "✏️ Corrigé",
+      confirm_title: "Vérifier cette capture",
+      confirm_was_shot: "C'était un tir",
+      confirm_was_noshot: "Ce n'était pas un tir",
+      confirm_weapon_label: "Arme réelle",
+      confirm_weapon_unknown: "Inconnue / autre",
+      confirm_submit: "Valider",
+      confirm_cancel: "Annuler",
     },
     en: {
       brand_sub: "Field listening post",
@@ -73,6 +85,18 @@
       ago_now: "just now",
       ago_seconds: "{n}s ago",
       ago_minutes: "{n} min ago",
+      th_verified: "Verified",
+      verify_hint: "Click “Verify” to confirm or correct a classification — only operator-verified captures can be used to improve the models.",
+      verify_button: "Verify",
+      verify_confirmed: "✅ Confirmed",
+      verify_corrected: "✏️ Corrected",
+      confirm_title: "Verify this capture",
+      confirm_was_shot: "It was a shot",
+      confirm_was_noshot: "It was not a shot",
+      confirm_weapon_label: "Actual weapon",
+      confirm_weapon_unknown: "Unknown / other",
+      confirm_submit: "Submit",
+      confirm_cancel: "Cancel",
     },
   };
 
@@ -107,9 +131,15 @@
   const testSubmit = document.getElementById("testSubmit");
   const testError = document.getElementById("testError");
   const langSwitch = document.getElementById("langSwitch");
+  const confirmPanel = document.getElementById("confirmPanel");
+  const confirmWeaponRow = document.getElementById("confirmWeaponRow");
+  const confirmWeapon = document.getElementById("confirmWeapon");
+  const confirmSubmit = document.getElementById("confirmSubmit");
+  const confirmCancel = document.getElementById("confirmCancel");
 
   let lastEntry = null;
   let lastHistory = [];
+  let confirmTargetId = null;
 
   function fmtTime(iso) {
     if (!iso) return "";
@@ -184,6 +214,18 @@
     if (!fromHistory) prependHistoryRow(entry);
   }
 
+  function verifyCellHTML(entry) {
+    if (!entry.id) return "—";
+    if (!entry.confirmed) {
+      return `<button type="button" class="btn-verify" data-verify-id="${entry.id}">${t("verify_button")}</button>`;
+    }
+    const changed = entry.confirmed.is_shot !== entry.summary.is_shot
+      || (entry.confirmed.is_shot && entry.confirmed.weapon && entry.confirmed.weapon !== entry.summary.weapon);
+    const cls = changed ? "corrected" : "confirmed";
+    const label = changed ? t("verify_corrected") : t("verify_confirmed");
+    return `<span class="verify-badge ${cls}">${label}</span>`;
+  }
+
   function historyRowHTML(entry) {
     const s = entry.summary;
     const conf = s.weapon_confidence != null ? `${Math.round(s.weapon_confidence * 100)}%` : "—";
@@ -193,6 +235,7 @@
       <td>${s.is_shot ? t("row_shot") : t("row_nonshot")}</td>
       <td>${s.weapon || "—"}</td>
       <td>${conf}</td>
+      <td>${verifyCellHTML(entry)}</td>
     `;
   }
 
@@ -201,6 +244,7 @@
     if (emptyRow) emptyRow.remove();
 
     const tr = document.createElement("tr");
+    tr.dataset.id = entry.id || "";
     if (entry.summary.is_shot) tr.classList.add("row-alert");
     tr.innerHTML = historyRowHTML(entry);
     historyBody.prepend(tr);
@@ -213,12 +257,61 @@
     lastHistory = entries;
     historyBody.innerHTML = "";
     if (!entries.length) {
-      historyBody.innerHTML = `<tr class="empty-row"><td colspan="5" data-i18n="empty_history">${t("empty_history")}</td></tr>`;
+      historyBody.innerHTML = `<tr class="empty-row"><td colspan="6" data-i18n="empty_history">${t("empty_history")}</td></tr>`;
       return;
     }
     entries.forEach((e) => prependHistoryRow(e));
     applyEntry(entries[0], { fromHistory: true });
   }
+
+  function findEntry(id) {
+    return lastHistory.find((e) => e.id === id);
+  }
+
+  historyBody.addEventListener("click", (ev) => {
+    const btn = ev.target.closest("[data-verify-id]");
+    if (btn) openConfirmPanel(btn.dataset.verifyId);
+  });
+
+  function openConfirmPanel(id) {
+    confirmTargetId = id;
+    confirmPanel.hidden = false;
+    confirmPanel.querySelector('input[value="shot"]').checked = true;
+    confirmWeaponRow.hidden = false;
+    confirmPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  confirmPanel.addEventListener("change", (ev) => {
+    if (ev.target.name === "confirmShot") {
+      confirmWeaponRow.hidden = ev.target.value !== "shot";
+    }
+  });
+
+  confirmCancel.addEventListener("click", () => {
+    confirmPanel.hidden = true;
+    confirmTargetId = null;
+  });
+
+  confirmSubmit.addEventListener("click", async () => {
+    if (!confirmTargetId) return;
+    const isShot = confirmPanel.querySelector('input[name="confirmShot"]:checked').value === "shot";
+    const weapon = isShot ? confirmWeapon.value : null;
+    confirmSubmit.disabled = true;
+    try {
+      await fetch("/api/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: confirmTargetId, is_shot: isShot, weapon }),
+      });
+    } catch {
+      // Le serveur local est injoignable : rien a faire de plus ici, l'operateur
+      // le remarquera (la ligne restera marquee "a verifier").
+    } finally {
+      confirmSubmit.disabled = false;
+      confirmPanel.hidden = true;
+      confirmTargetId = null;
+    }
+  });
 
   // Rafraichit le "il y a Xs" sans attendre un nouvel evenement.
   setInterval(() => {
@@ -243,6 +336,12 @@
         renderHistory(msg.payload);
       } else if (msg.type === "result") {
         renderHistory([msg.payload, ...lastHistory].slice(0, 50));
+      } else if (msg.type === "confirmation") {
+        const target = findEntry(msg.payload.id);
+        if (target) {
+          target.confirmed = msg.payload.confirmed;
+          renderHistory(lastHistory);
+        }
       }
     };
   }

@@ -15,6 +15,7 @@ dans la configuration du script d'envoi du Raspberry Pi (rpi_sender/).
 from __future__ import annotations
 
 import sys
+import uuid
 import webbrowser
 from collections import deque
 from datetime import datetime, timezone
@@ -31,6 +32,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from config import CONFIG_PATH, load_config
+from storage import log_capture, log_confirmation
 
 from src.models.inference import predict_pipeline
 
@@ -48,6 +50,13 @@ class IngestPayload(BaseModel):
     values: list[int] = Field(..., description="512 echantillons ADC 8 bits (0-255)")
     sensor_id: str | None = None
     captured_at: str | None = None
+
+
+class ConfirmPayload(BaseModel):
+    id: str
+    is_shot: bool
+    weapon: str | None = None
+    note: str | None = None
 
 
 def _now() -> str:
@@ -107,12 +116,15 @@ async def ingest(payload: IngestPayload, x_api_key: str | None = Header(default=
 
     out = predict_pipeline(payload.values)
     entry = {
+        "id": uuid.uuid4().hex,
         "received_at": last_seen,
         "sensor_id": payload.sensor_id,
         "captured_at": payload.captured_at,
         "values": payload.values,
         "summary": _summarize(out),
+        "confirmed": None,
     }
+    log_capture(entry)
     history.appendleft(entry)
     await _broadcast({"type": "result", "payload": entry})
     return {"ok": True, "result": entry["summary"]}
@@ -125,15 +137,36 @@ async def manual_predict(payload: IngestPayload):
         raise HTTPException(status_code=422, detail=f"512 valeurs attendues, {len(payload.values)} recues.")
     out = predict_pipeline(payload.values)
     entry = {
+        "id": uuid.uuid4().hex,
         "received_at": _now(),
         "sensor_id": "manuel (UI)",
         "captured_at": None,
         "values": payload.values,
         "summary": _summarize(out),
+        "confirmed": None,
     }
+    log_capture(entry)
     history.appendleft(entry)
     await _broadcast({"type": "result", "payload": entry})
     return {"ok": True, "result": entry["summary"]}
+
+
+@app.post("/api/confirm")
+async def confirm(payload: ConfirmPayload):
+    """Enregistre la correction/validation d'un operateur pour une capture :
+    seule cette information (pas la prediction seule) constitue une donnee
+    labellisee exploitable pour un futur re-entrainement (voir storage.py)."""
+    confirmed_at = _now()
+    confirmed = {"is_shot": payload.is_shot, "weapon": payload.weapon, "note": payload.note}
+    log_confirmation(payload.id, confirmed, confirmed_at)
+
+    for entry in history:
+        if entry.get("id") == payload.id:
+            entry["confirmed"] = confirmed
+            break
+
+    await _broadcast({"type": "confirmation", "payload": {"id": payload.id, "confirmed": confirmed}})
+    return {"ok": True}
 
 
 @app.get("/api/status")

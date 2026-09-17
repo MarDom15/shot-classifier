@@ -45,6 +45,7 @@ models_store/*
 field_app/build/dist/
 field_app/build/work/
 field_app/instance/
+field_app/data/
 rpi_sender/instance/
 
 # Script d'installation Python telecharge pour construire l'exe (pas du code).

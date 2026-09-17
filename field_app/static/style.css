@@ -244,6 +244,58 @@ textarea {
 .btn-primary:active { transform: translateY(1px); }
 .test-error { color: var(--danger); font-size: 0.85rem; }
 
+.btn-secondary {
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 18px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  min-height: 44px;
+}
+.btn-secondary:hover { color: var(--text); border-color: var(--khaki-dim); }
+
+.btn-verify {
+  background: transparent;
+  color: var(--khaki-dim);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-verify:hover { color: var(--khaki); border-color: var(--khaki-dim); }
+.verify-badge { font-size: 0.85rem; white-space: nowrap; }
+.verify-badge.confirmed { color: var(--safe); }
+.verify-badge.corrected { color: var(--warn); }
+
+.confirm-panel { border-color: var(--olive-light); }
+.confirm-choice {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  font-size: 0.95rem;
+}
+.confirm-choice label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.confirm-weapon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.confirm-weapon select {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  min-height: 40px;
+}
+.confirm-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
 .foot {
   text-align: center;
   color: var(--text-dim);

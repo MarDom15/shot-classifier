@@ -53,12 +53,35 @@
               <th data-i18n="th_result">Résultat</th>
               <th data-i18n="th_weapon">Arme</th>
               <th data-i18n="th_confidence">Confiance</th>
+              <th data-i18n="th_verified">Vérifié</th>
             </tr>
           </thead>
           <tbody id="historyBody">
-            <tr class="empty-row"><td colspan="5" data-i18n="empty_history">Aucun évènement pour l'instant.</td></tr>
+            <tr class="empty-row"><td colspan="6" data-i18n="empty_history">Aucun évènement pour l'instant.</td></tr>
           </tbody>
         </table>
+      </div>
+      <p class="hint" data-i18n="verify_hint">Cliquez sur « Vérifier » pour confirmer ou corriger une classification — seules les captures vérifiées par un opérateur sont utilisables pour améliorer les modèles.</p>
+    </section>
+
+    <section class="panel confirm-panel" id="confirmPanel" hidden>
+      <h2 data-i18n="confirm_title">Vérifier cette capture</h2>
+      <div class="confirm-choice">
+        <label><input type="radio" name="confirmShot" value="shot" checked> <span data-i18n="confirm_was_shot">C'était un tir</span></label>
+        <label><input type="radio" name="confirmShot" value="noshot"> <span data-i18n="confirm_was_noshot">Ce n'était pas un tir</span></label>
+      </div>
+      <div class="confirm-weapon" id="confirmWeaponRow">
+        <label for="confirmWeapon" data-i18n="confirm_weapon_label">Arme réelle</label>
+        <select id="confirmWeapon">
+          <option value="G36">G36</option>
+          <option value="MP7">MP7</option>
+          <option value="P8">P8</option>
+          <option value="?" data-i18n="confirm_weapon_unknown">Inconnue / autre</option>
+        </select>
+      </div>
+      <div class="confirm-actions">
+        <button id="confirmSubmit" type="button" class="btn-primary" data-i18n="confirm_submit">Valider</button>
+        <button id="confirmCancel" type="button" class="btn-secondary" data-i18n="confirm_cancel">Annuler</button>
       </div>
     </section>
 
