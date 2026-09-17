@@ -1,0 +1,12 @@
+[tool.ruff.lint]
+# EXE002 (« fichier executable sans shebang ») desactivee : ce depot ne contient
+# aucun script destine a etre execute directement (tout passe par `python -m`),
+# et la regle produit de faux positifs sur les montages Docker Windows qui
+# exposent tous les fichiers montes comme executables independamment du mode
+# reellement stocke dans Git (verifie via `git ls-files -s`).
+# BLE001 (« except Exception trop large ») desactivee : les quelques
+# occurrences du depot sont des frontieres defensives volontaires (l'agent
+# autonome doit survivre a une erreur pour continuer sa boucle `watch`,
+# l'UI Streamlit ne doit pas planter sur un rapport de derive en echec) —
+# voir les commentaires "defensif" a chaque site d'appel.
+ignore = ["EXE002", "BLE001"]

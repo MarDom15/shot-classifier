@@ -1,0 +1,24 @@
+{
+  "stage": "stage1_is_shot",
+  "model": "lightgbm",
+  "accuracy": 0.9695121951219512,
+  "balanced_accuracy": 0.7111010009099181,
+  "f1_macro": 0.7648408373960425,
+  "precision_macro": 0.8625,
+  "recall_macro": 0.7111010009099181,
+  "n_test": 164,
+  "labels": [
+    0,
+    1
+  ],
+  "confusion_matrix": [
+    [
+      3,
+      4
+    ],
+    [
+      1,
+      156
+    ]
+  ]
+}

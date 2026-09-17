@@ -1,0 +1,32 @@
+{
+  "stage": "stage2_weapon",
+  "model": "svm_rbf",
+  "accuracy": 0.4968152866242038,
+  "balanced_accuracy": 0.50754662004662,
+  "f1_macro": 0.4835459861775651,
+  "precision_macro": 0.5138888888888888,
+  "recall_macro": 0.50754662004662,
+  "n_test": 157,
+  "labels": [
+    0,
+    1,
+    2
+  ],
+  "confusion_matrix": [
+    [
+      39,
+      4,
+      5
+    ],
+    [
+      24,
+      15,
+      5
+    ],
+    [
+      9,
+      32,
+      24
+    ]
+  ]
+}

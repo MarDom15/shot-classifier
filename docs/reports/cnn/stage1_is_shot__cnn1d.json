@@ -1,0 +1,24 @@
+{
+  "stage": "stage1_is_shot",
+  "model": "cnn1d",
+  "accuracy": 0.9634146341463414,
+  "balanced_accuracy": 0.7761601455868972,
+  "f1_macro": 0.7761601455868972,
+  "precision_macro": 0.7761601455868972,
+  "recall_macro": 0.7761601455868972,
+  "n_test": 164,
+  "labels": [
+    0,
+    1
+  ],
+  "confusion_matrix": [
+    [
+      4,
+      3
+    ],
+    [
+      3,
+      154
+    ]
+  ]
+}

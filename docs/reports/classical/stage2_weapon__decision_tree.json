@@ -1,0 +1,32 @@
+{
+  "stage": "stage2_weapon",
+  "model": "decision_tree",
+  "accuracy": 0.4840764331210191,
+  "balanced_accuracy": 0.49610528360528366,
+  "f1_macro": 0.4727184121920964,
+  "precision_macro": 0.5013616557734205,
+  "recall_macro": 0.49610528360528366,
+  "n_test": 157,
+  "labels": [
+    0,
+    1,
+    2
+  ],
+  "confusion_matrix": [
+    [
+      37,
+      8,
+      3
+    ],
+    [
+      20,
+      16,
+      8
+    ],
+    [
+      15,
+      27,
+      23
+    ]
+  ]
+}

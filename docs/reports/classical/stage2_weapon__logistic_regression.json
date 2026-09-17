@@ -1,0 +1,32 @@
+{
+  "stage": "stage2_weapon",
+  "model": "logistic_regression",
+  "accuracy": 0.49044585987261147,
+  "balanced_accuracy": 0.4993395493395494,
+  "f1_macro": 0.4733853607465453,
+  "precision_macro": 0.5039096719768988,
+  "recall_macro": 0.4993395493395494,
+  "n_test": 157,
+  "labels": [
+    0,
+    1,
+    2
+  ],
+  "confusion_matrix": [
+    [
+      40,
+      4,
+      4
+    ],
+    [
+      25,
+      13,
+      6
+    ],
+    [
+      9,
+      32,
+      24
+    ]
+  ]
+}

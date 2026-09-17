@@ -1,0 +1,40 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Journaux de monitoring locaux (donnees d'utilisation, pas de code)
+monitoring/prediction_log.jsonl
+
+# Rapports volumineux regeneres par les scripts (garder le CSV/PNG de synthese
+# suffit pour le depot ; les rapports par-modele sont reproductibles)
+docs/reports/drift_report.html
+docs/reports/agent/drift_*.html
+docs/reports/agent/run_log.jsonl
+
+# Snapshots de modeles pris automatiquement par l'agent avant chaque
+# reentrainement (rollback) : regenerees a l'usage, pas versionnees.
+models_store_history/*
+!models_store_history/.gitkeep
+
+# Archives de nouvelles sessions deposees pour ingestion par l'agent :
+# a l'utilisateur de decider lesquelles versionner.
+data/raw/incoming/*
+!data/raw/incoming/.gitkeep
+
+.DS_Store
+Thumbs.db
+
+# Donnees d'essais reels (armes de service) : a ne jamais publier sans
+# autorisation prealable de l'organisation proprietaire (voir
+# CAHIER_DES_CHARGES.md, section 11). Le depot public ne contient que le
+# code ; le jeu de donnees et les modeles entraines sont fournis separement
+# aux personnes autorisees.
+data/raw/*.zip
+data/processed/*.csv
+models_store/*
+!models_store/.gitkeep

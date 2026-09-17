@@ -1,0 +1,15 @@
+.git
+.github
+__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+data/raw/incoming
+docs/reports/classical/*.txt
+docs/reports/cnn/*.txt
+docs/reports/agent
+*.ipynb_checkpoints
+.venv
+venv
+monitoring/prediction_log.jsonl
+models_store_history

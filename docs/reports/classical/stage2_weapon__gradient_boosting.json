@@ -1,0 +1,32 @@
+{
+  "stage": "stage2_weapon",
+  "model": "gradient_boosting",
+  "accuracy": 0.49044585987261147,
+  "balanced_accuracy": 0.5042346542346543,
+  "f1_macro": 0.4766484200935344,
+  "precision_macro": 0.5256463359911635,
+  "recall_macro": 0.5042346542346543,
+  "n_test": 157,
+  "labels": [
+    0,
+    1,
+    2
+  ],
+  "confusion_matrix": [
+    [
+      40,
+      5,
+      3
+    ],
+    [
+      25,
+      15,
+      4
+    ],
+    [
+      9,
+      34,
+      22
+    ]
+  ]
+}

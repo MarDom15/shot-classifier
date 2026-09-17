@@ -1,0 +1,24 @@
+{
+  "stage": "stage1_is_shot",
+  "model": "svm_rbf",
+  "accuracy": 0.9634146341463414,
+  "balanced_accuracy": 0.5714285714285714,
+  "f1_macro": 0.615625,
+  "precision_macro": 0.9815950920245399,
+  "recall_macro": 0.5714285714285714,
+  "n_test": 164,
+  "labels": [
+    0,
+    1
+  ],
+  "confusion_matrix": [
+    [
+      1,
+      6
+    ],
+    [
+      0,
+      157
+    ]
+  ]
+}

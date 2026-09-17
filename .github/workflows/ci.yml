@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Installer les dépendances (CPU only pour torch)
+        run: |
+          pip install --index-url https://download.pytorch.org/whl/cpu "torch>=2.2"
+          pip install -r requirements-dev.txt
+
+      - name: Lint (ruff)
+        run: ruff check src app tests
+
+      - name: Tests unitaires (parsing, features, labels)
+        run: pytest -q tests/test_parse_raw.py tests/test_features.py tests/test_labels.py
+
+      - name: Régénérer le jeu de données à partir de l'archive brute
+        run: |
+          python -m src.data.parse_raw
+          python -m src.data.features
+
+      - name: Ré-entraîner les modèles (vérifie la reproductibilité complète)
+        run: |
+          python -m src.training.train_classical
+          python -m src.training.train_cnn
+          python -m src.training.compare_models
+
+      - name: Tests d'inférence (nécessitent les modèles ci-dessus)
+        run: pytest -q tests/test_inference.py
+
+      - name: Publier le rapport de comparaison des modèles
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-comparison-report
+          path: |
+            docs/reports/model_comparison_final.csv
+            docs/reports/model_comparison_final.png

@@ -1,0 +1,24 @@
+{
+  "stage": "stage1_is_shot",
+  "model": "knn",
+  "accuracy": 0.9695121951219512,
+  "balanced_accuracy": 0.6428571428571428,
+  "f1_macro": 0.7143852316266109,
+  "precision_macro": 0.9845679012345678,
+  "recall_macro": 0.6428571428571428,
+  "n_test": 164,
+  "labels": [
+    0,
+    1
+  ],
+  "confusion_matrix": [
+    [
+      2,
+      5
+    ],
+    [
+      0,
+      157
+    ]
+  ]
+}

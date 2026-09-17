@@ -1,0 +1,32 @@
+{
+  "stage": "stage2_weapon",
+  "model": "knn",
+  "accuracy": 0.4267515923566879,
+  "balanced_accuracy": 0.4431623931623932,
+  "f1_macro": 0.3979904291495484,
+  "precision_macro": 0.5204565030146425,
+  "recall_macro": 0.4431623931623932,
+  "n_test": 157,
+  "labels": [
+    0,
+    1,
+    2
+  ],
+  "confusion_matrix": [
+    [
+      40,
+      6,
+      2
+    ],
+    [
+      33,
+      11,
+      0
+    ],
+    [
+      23,
+      26,
+      16
+    ]
+  ]
+}

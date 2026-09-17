@@ -1,0 +1,32 @@
+{
+  "stage": "stage2_weapon",
+  "model": "xgboost",
+  "accuracy": 0.5031847133757962,
+  "balanced_accuracy": 0.5217560217560218,
+  "f1_macro": 0.48032721105014264,
+  "precision_macro": 0.5880029531192322,
+  "recall_macro": 0.5217560217560218,
+  "n_test": 157,
+  "labels": [
+    0,
+    1,
+    2
+  ],
+  "confusion_matrix": [
+    [
+      44,
+      4,
+      0
+    ],
+    [
+      28,
+      15,
+      1
+    ],
+    [
+      14,
+      31,
+      20
+    ]
+  ]
+}

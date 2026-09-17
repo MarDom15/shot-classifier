@@ -1,0 +1,32 @@
+{
+  "stage": "stage2_weapon",
+  "model": "lightgbm",
+  "accuracy": 0.5031847133757962,
+  "balanced_accuracy": 0.5193084693084693,
+  "f1_macro": 0.48000071047609244,
+  "precision_macro": 0.5721349409328949,
+  "recall_macro": 0.5193084693084693,
+  "n_test": 157,
+  "labels": [
+    0,
+    1,
+    2
+  ],
+  "confusion_matrix": [
+    [
+      44,
+      4,
+      0
+    ],
+    [
+      28,
+      14,
+      2
+    ],
+    [
+      13,
+      31,
+      21
+    ]
+  ]
+}

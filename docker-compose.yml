@@ -1,0 +1,39 @@
+# Stack 100% locale et gratuite : l'app Streamlit (interface) + l'agent
+# autonome (ré-entraînement périodique + monitoring), tous deux construits
+# depuis la même image. Les deux services partagent les mêmes volumes afin
+# que les modèles ré-entraînés par l'agent soient immédiatement visibles
+# dans l'app, sans redémarrage.
+services:
+  app:
+    build: .
+    image: shot-classifier:latest
+    container_name: shot-classifier-app
+    command: ["streamlit", "run", "app/streamlit_app.py", "--server.address=0.0.0.0", "--server.port=8501"]
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
+      - ./models_store:/app/models_store
+      - ./models_store_history:/app/models_store_history
+      - ./docs/reports:/app/docs/reports
+      - ./monitoring:/app/monitoring
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+  agent:
+    build: .
+    image: shot-classifier:latest
+    container_name: shot-classifier-agent
+    command: ["python", "-m", "src.agent.ml_agent", "watch", "--interval", "${AGENT_INTERVAL_SECONDS:-21600}"]
+    volumes:
+      - ./data:/app/data
+      - ./models_store:/app/models_store
+      - ./models_store_history:/app/models_store_history
+      - ./docs/reports:/app/docs/reports
+      - ./monitoring:/app/monitoring
+    restart: unless-stopped

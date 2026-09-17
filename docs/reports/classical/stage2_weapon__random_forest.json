@@ -1,0 +1,32 @@
+{
+  "stage": "stage2_weapon",
+  "model": "random_forest",
+  "accuracy": 0.4968152866242038,
+  "balanced_accuracy": 0.5032828282828282,
+  "f1_macro": 0.4838285926161343,
+  "precision_macro": 0.4981792717086835,
+  "recall_macro": 0.5032828282828282,
+  "n_test": 157,
+  "labels": [
+    0,
+    1,
+    2
+  ],
+  "confusion_matrix": [
+    [
+      38,
+      4,
+      6
+    ],
+    [
+      22,
+      14,
+      8
+    ],
+    [
+      8,
+      31,
+      26
+    ]
+  ]
+}
