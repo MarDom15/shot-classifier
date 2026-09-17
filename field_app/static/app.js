@@ -8,6 +8,7 @@
       conn_online: "Connecté au poste",
       conn_offline: "Connexion perdue — reconnexion...",
       status_headline_idle: "AUCUNE DONNÉE REÇUE",
+      status_headline_idle_target: "AUCUNE DONNÉE — {label}",
       status_detail_idle: "En attente de la première capture du capteur…",
       status_headline_shot: "TIR DÉTECTÉ — {weapon}",
       unknown_weapon: "arme inconnue",
@@ -15,9 +16,14 @@
       status_detail_clear: "Impact non balistique — modèle étage 1 : {model}",
       status_detail_shot: "Modèle étage 1 : {m1} · Modèle étage 2 : {m2}{conf}",
       confidence_suffix: " ({pct}% de confiance)",
+      targets_panel_title: "Cibles",
+      targets_hint: "Cliquez sur une cible pour voir son détail ci-dessous.",
+      target_no_data: "Aucune donnée",
+      unpin_target: "✕ Revenir à la dernière alerte",
       wave_panel_title: "Dernière forme d'onde",
       history_panel_title: "Historique récent",
       th_time: "Heure",
+      th_target: "Cible",
       th_sensor: "Capteur",
       th_result: "Résultat",
       th_weapon: "Arme",
@@ -28,6 +34,8 @@
       test_toggle_closed: "🧪 Test manuel (sans capteur) ▾",
       test_toggle_open: "🧪 Test manuel (sans capteur) ▴",
       test_hint: "Coller 512 octets hexadécimaux séparés par des espaces (ex. issus de l'app de démonstration).",
+      test_target_label: "Cible à simuler",
+      test_target_generic: "Test générique (aucune cible)",
       test_button: "Classer cette forme d'onde",
       test_error_format: "Format invalide : octets hexadécimaux séparés par des espaces.",
       test_error_count: "512 valeurs attendues, {n} fournies.",
@@ -56,6 +64,7 @@
       conn_online: "Connected",
       conn_offline: "Connection lost — reconnecting...",
       status_headline_idle: "NO DATA RECEIVED",
+      status_headline_idle_target: "NO DATA — {label}",
       status_detail_idle: "Waiting for the first sensor capture…",
       status_headline_shot: "SHOT DETECTED — {weapon}",
       unknown_weapon: "unknown weapon",
@@ -63,9 +72,14 @@
       status_detail_clear: "Non-ballistic impact — stage 1 model: {model}",
       status_detail_shot: "Stage 1 model: {m1} · Stage 2 model: {m2}{conf}",
       confidence_suffix: " ({pct}% confidence)",
+      targets_panel_title: "Targets",
+      targets_hint: "Click a target to see its detail below.",
+      target_no_data: "No data",
+      unpin_target: "✕ Back to latest alert",
       wave_panel_title: "Latest waveform",
       history_panel_title: "Recent history",
       th_time: "Time",
+      th_target: "Target",
       th_sensor: "Sensor",
       th_result: "Result",
       th_weapon: "Weapon",
@@ -76,6 +90,8 @@
       test_toggle_closed: "🧪 Manual test (no sensor) ▾",
       test_toggle_open: "🧪 Manual test (no sensor) ▴",
       test_hint: "Paste 512 hexadecimal bytes separated by spaces (e.g. from the demo app).",
+      test_target_label: "Target to simulate",
+      test_target_generic: "Generic test (no target)",
       test_button: "Classify this waveform",
       test_error_format: "Invalid format: hexadecimal bytes separated by spaces.",
       test_error_count: "512 values expected, {n} provided.",
@@ -117,17 +133,21 @@
 
   const conn = document.getElementById("conn");
   const connLabel = document.getElementById("connLabel");
+  const targetsGrid = document.getElementById("targetsGrid");
   const statusCard = document.getElementById("statusCard");
   const statusIcon = document.getElementById("statusIcon");
+  const statusTarget = document.getElementById("statusTarget");
   const statusHeadline = document.getElementById("statusHeadline");
   const statusDetail = document.getElementById("statusDetail");
   const statusTime = document.getElementById("statusTime");
+  const statusUnpin = document.getElementById("statusUnpin");
   const historyBody = document.getElementById("historyBody");
   const canvas = document.getElementById("waveCanvas");
   const ctx = canvas.getContext("2d");
   const testToggle = document.getElementById("testToggle");
   const testBody = document.getElementById("testBody");
   const testInput = document.getElementById("testInput");
+  const testTarget = document.getElementById("testTarget");
   const testSubmit = document.getElementById("testSubmit");
   const testError = document.getElementById("testError");
   const langSwitch = document.getElementById("langSwitch");
@@ -140,6 +160,9 @@
   let lastEntry = null;
   let lastHistory = [];
   let confirmTargetId = null;
+  let targetsList = [];
+  let targetLastResult = {};
+  let selectedTargetId = null; // null = suit automatiquement le dernier evenement, quelle que soit la cible
 
   function fmtTime(iso) {
     if (!iso) return "";
@@ -184,9 +207,15 @@
     connLabel.textContent = t(labelKey);
   }
 
-  function applyEntry(entry, { fromHistory = false } = {}) {
+  function targetLabelById(id) {
+    const tgt = targetsList.find((x) => x.id === id);
+    return tgt ? tgt.label : "";
+  }
+
+  function applyEntry(entry) {
     lastEntry = entry;
     const s = entry.summary;
+    statusTarget.textContent = entry.target_label || "";
 
     if (s.is_shot) {
       statusCard.dataset.state = "alert";
@@ -208,10 +237,87 @@
       statusDetail.textContent = t("status_detail_clear", { model: s.stage1_model });
     }
     statusTime.textContent = `${fmtTime(entry.received_at)} · ${agoLabel(entry.received_at)}`;
-
     drawWave(entry.values);
+  }
 
-    if (!fromHistory) prependHistoryRow(entry);
+  function showIdleForTarget(targetId) {
+    lastEntry = null;
+    const label = targetId != null ? targetLabelById(targetId) : "";
+    statusTarget.textContent = label;
+    statusCard.dataset.state = "idle";
+    statusIcon.textContent = "◎";
+    statusHeadline.removeAttribute("data-i18n");
+    statusHeadline.textContent = targetId != null
+      ? t("status_headline_idle_target", { label })
+      : t("status_headline_idle");
+    statusDetail.setAttribute("data-i18n", "status_detail_idle");
+    statusDetail.textContent = t("status_detail_idle");
+    statusTime.textContent = "";
+    drawWave(null);
+  }
+
+  function refreshDetail() {
+    let entry = null;
+    if (selectedTargetId !== null) {
+      entry = targetLastResult[selectedTargetId] || null;
+    } else if (lastHistory.length) {
+      entry = lastHistory[0];
+    }
+    if (entry) {
+      applyEntry(entry);
+    } else {
+      showIdleForTarget(selectedTargetId);
+    }
+  }
+
+  function renderTargetsGrid() {
+    targetsGrid.innerHTML = "";
+    targetsList.forEach((tgt) => {
+      const entry = targetLastResult[tgt.id];
+      let state = "idle";
+      let info = t("target_no_data");
+      if (entry) {
+        state = entry.summary.is_shot ? "alert" : "clear";
+        info = entry.summary.is_shot ? (entry.summary.weapon || t("unknown_weapon")) : t("row_nonshot");
+      }
+      const box = document.createElement("button");
+      box.type = "button";
+      box.className = "target-box" + (selectedTargetId === tgt.id ? " selected" : "");
+      box.dataset.targetId = String(tgt.id);
+      box.dataset.state = state;
+      box.innerHTML = `
+        <span class="target-box-icon">🎯</span>
+        <span class="target-box-label">${tgt.label}</span>
+        <span class="target-box-ip">${tgt.ip}</span>
+        <span class="target-box-info">${info}</span>
+      `;
+      targetsGrid.appendChild(box);
+    });
+  }
+
+  targetsGrid.addEventListener("click", (ev) => {
+    const box = ev.target.closest(".target-box");
+    if (!box) return;
+    selectedTargetId = Number(box.dataset.targetId);
+    statusUnpin.hidden = false;
+    renderTargetsGrid();
+    refreshDetail();
+    statusCard.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+
+  statusUnpin.addEventListener("click", () => {
+    selectedTargetId = null;
+    statusUnpin.hidden = true;
+    renderTargetsGrid();
+    refreshDetail();
+  });
+
+  function populateTestTargetOptions() {
+    testTarget.innerHTML = "";
+    testTarget.appendChild(new Option(t("test_target_generic"), ""));
+    targetsList.forEach((tgt) => {
+      testTarget.appendChild(new Option(`${tgt.label} (${tgt.ip})`, String(tgt.id)));
+    });
   }
 
   function verifyCellHTML(entry) {
@@ -231,6 +337,7 @@
     const conf = s.weapon_confidence != null ? `${Math.round(s.weapon_confidence * 100)}%` : "—";
     return `
       <td>${fmtTime(entry.received_at)}</td>
+      <td>${entry.target_label || "—"}</td>
       <td>${entry.sensor_id || "—"}</td>
       <td>${s.is_shot ? t("row_shot") : t("row_nonshot")}</td>
       <td>${s.weapon || "—"}</td>
@@ -257,11 +364,12 @@
     lastHistory = entries;
     historyBody.innerHTML = "";
     if (!entries.length) {
-      historyBody.innerHTML = `<tr class="empty-row"><td colspan="6" data-i18n="empty_history">${t("empty_history")}</td></tr>`;
+      historyBody.innerHTML = `<tr class="empty-row"><td colspan="7" data-i18n="empty_history">${t("empty_history")}</td></tr>`;
       return;
     }
-    entries.forEach((e) => prependHistoryRow(e));
-    applyEntry(entries[0], { fromHistory: true });
+    // entries est trie du plus recent au plus ancien ; on les prepend dans
+    // l'ordre inverse pour que le plus recent reste bien en haut du tableau.
+    [...entries].reverse().forEach((e) => prependHistoryRow(e));
   }
 
   function findEntry(id) {
@@ -334,12 +442,26 @@
       const msg = JSON.parse(ev.data);
       if (msg.type === "history") {
         renderHistory(msg.payload);
+        refreshDetail();
+      } else if (msg.type === "targets") {
+        targetsList = msg.payload.targets;
+        targetLastResult = msg.payload.last_results || {};
+        populateTestTargetOptions();
+        renderTargetsGrid();
+        refreshDetail();
       } else if (msg.type === "result") {
-        renderHistory([msg.payload, ...lastHistory].slice(0, 50));
+        lastHistory = [msg.payload, ...lastHistory].slice(0, 50);
+        prependHistoryRow(msg.payload);
+        const tid = msg.payload.target_id;
+        if (tid != null) targetLastResult[tid] = msg.payload;
+        renderTargetsGrid();
+        if (selectedTargetId === null || selectedTargetId === tid) {
+          applyEntry(msg.payload);
+        }
       } else if (msg.type === "confirmation") {
-        const target = findEntry(msg.payload.id);
-        if (target) {
-          target.confirmed = msg.payload.confirmed;
+        const e = findEntry(msg.payload.id);
+        if (e) {
+          e.confirmed = msg.payload.confirmed;
           renderHistory(lastHistory);
         }
       }
@@ -376,7 +498,11 @@
       const res = await fetch("/api/manual-predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ values, sensor_id: "manuel (UI)" }),
+        body: JSON.stringify({
+          values,
+          sensor_id: "manuel (UI)",
+          target_id: testTarget.value ? Number(testTarget.value) : null,
+        }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -405,10 +531,10 @@
       localStorage.setItem("fieldapp_lang", lang);
     } catch { /* stockage indisponible : la preference ne survivra pas au rechargement */ }
     applyStaticStrings();
-    // Re-rend le contenu dynamique (carte de statut, historique) dans la nouvelle langue.
-    if (lastHistory.length) {
-      renderHistory(lastHistory);
-    }
+    populateTestTargetOptions();
+    renderTargetsGrid();
+    renderHistory(lastHistory);
+    refreshDetail();
   }
 
   langSwitch.addEventListener("click", (ev) => {

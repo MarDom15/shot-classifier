@@ -1,6 +1,7 @@
-"""App terrain : recoit les formes d'onde d'un Raspberry Pi via le wifi
-commun, classe chaque tir en direct avec le pipeline entraine, et pousse le
-resultat en temps reel a l'interface web (tablette Windows).
+"""App terrain : recoit les formes d'onde de 18 postes de tir (Raspberry Pi,
+IP fixes 192.168.0.41-58) via le wifi commun, classe chaque tir en direct
+avec le pipeline entraine, et pousse le resultat en temps reel a l'interface
+web (tablette Windows) — une boite de controle par cible.
 
 Lancement (dev, depuis les sources) :
     python field_app/server.py
@@ -22,7 +23,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from threading import Timer
 
-from fastapi import FastAPI, Header, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import (
+    FastAPI,
+    Header,
+    HTTPException,
+    Request,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -33,6 +41,7 @@ sys.path.insert(0, str(ROOT))
 
 from config import CONFIG_PATH, load_config
 from storage import log_capture, log_confirmation
+from targets import TARGETS, TARGETS_BY_ID, identify_target
 
 from src.models.inference import predict_pipeline
 
@@ -44,12 +53,21 @@ app = FastAPI(title="Shot Classifier — Terrain")
 history: deque[dict] = deque(maxlen=CONFIG["max_history"])
 connections: set[WebSocket] = set()
 last_seen: str | None = None
+# Dernier resultat connu par cible (id -> entry), independant de l'historique
+# global (capacite limitee) : une cible silencieuse depuis longtemps garde
+# son dernier statut affiche tant qu'un evenement plus recent d'une autre
+# cible ne l'a pas fait sortir de `history`.
+target_last_result: dict[int, dict] = {}
 
 
 class IngestPayload(BaseModel):
     values: list[int] = Field(..., description="512 echantillons ADC 8 bits (0-255)")
     sensor_id: str | None = None
     captured_at: str | None = None
+
+
+class ManualPredictPayload(IngestPayload):
+    target_id: int | None = None
 
 
 class ConfirmPayload(BaseModel):
@@ -86,6 +104,31 @@ def _summarize(out: dict) -> dict:
     return summary
 
 
+def _make_entry(values: list[int], sensor_id: str | None, captured_at: str | None,
+                 target: dict | None, source_ip: str | None) -> dict:
+    out = predict_pipeline(values)
+    return {
+        "id": uuid.uuid4().hex,
+        "received_at": _now(),
+        "sensor_id": sensor_id,
+        "captured_at": captured_at,
+        "values": values,
+        "summary": _summarize(out),
+        "confirmed": None,
+        "target_id": target["id"] if target else None,
+        "target_label": target["label"] if target else (f"IP inconnue ({source_ip})" if source_ip else "Test manuel"),
+        "ip": source_ip,
+    }
+
+
+async def _publish(entry: dict) -> None:
+    log_capture(entry)
+    history.appendleft(entry)
+    if entry["target_id"] is not None:
+        target_last_result[entry["target_id"]] = entry
+    await _broadcast({"type": "result", "payload": entry})
+
+
 async def _broadcast(message: dict) -> None:
     dead = []
     for ws in connections:
@@ -103,8 +146,11 @@ def _check_key(x_api_key: str | None) -> None:
 
 
 @app.post("/ingest")
-async def ingest(payload: IngestPayload, x_api_key: str | None = Header(default=None)):
-    """Point d'entree pour le Raspberry Pi : une forme d'onde -> une classification."""
+async def ingest(payload: IngestPayload, request: Request, x_api_key: str | None = Header(default=None)):
+    """Point d'entree pour un Raspberry Pi : une forme d'onde -> une classification.
+
+    La cible est identifiee par l'IP source de la requete (192.168.0.41-58),
+    pas par une auto-declaration du RPi — voir targets.py."""
     _check_key(x_api_key)
     if len(payload.values) != 512:
         raise HTTPException(status_code=422, detail=f"512 valeurs attendues, {len(payload.values)} recues.")
@@ -114,40 +160,25 @@ async def ingest(payload: IngestPayload, x_api_key: str | None = Header(default=
     global last_seen
     last_seen = _now()
 
-    out = predict_pipeline(payload.values)
-    entry = {
-        "id": uuid.uuid4().hex,
-        "received_at": last_seen,
-        "sensor_id": payload.sensor_id,
-        "captured_at": payload.captured_at,
-        "values": payload.values,
-        "summary": _summarize(out),
-        "confirmed": None,
-    }
-    log_capture(entry)
-    history.appendleft(entry)
-    await _broadcast({"type": "result", "payload": entry})
-    return {"ok": True, "result": entry["summary"]}
+    source_ip = request.client.host if request.client else None
+    target = identify_target(source_ip)
+    entry = _make_entry(payload.values, payload.sensor_id, payload.captured_at, target, source_ip)
+    await _publish(entry)
+    return {"ok": True, "result": entry["summary"], "target": target}
 
 
 @app.post("/api/manual-predict")
-async def manual_predict(payload: IngestPayload):
-    """Utilise par le panneau 'Test manuel' de l'UI (meme origine, pas de cle requise)."""
+async def manual_predict(payload: ManualPredictPayload):
+    """Utilise par le panneau 'Test manuel' de l'UI (meme origine, pas de cle
+    requise) — la cible a simuler est choisie explicitement dans l'UI plutot
+    que deduite de l'IP (une requete du navigateur vient de la tablette
+    elle-meme, jamais d'une des 18 IP de cible)."""
     if len(payload.values) != 512:
         raise HTTPException(status_code=422, detail=f"512 valeurs attendues, {len(payload.values)} recues.")
-    out = predict_pipeline(payload.values)
-    entry = {
-        "id": uuid.uuid4().hex,
-        "received_at": _now(),
-        "sensor_id": "manuel (UI)",
-        "captured_at": None,
-        "values": payload.values,
-        "summary": _summarize(out),
-        "confirmed": None,
-    }
-    log_capture(entry)
-    history.appendleft(entry)
-    await _broadcast({"type": "result", "payload": entry})
+
+    target = TARGETS_BY_ID.get(payload.target_id) if payload.target_id else None
+    entry = _make_entry(payload.values, payload.sensor_id or "manuel (UI)", None, target, None)
+    await _publish(entry)
     return {"ok": True, "result": entry["summary"]}
 
 
@@ -169,6 +200,11 @@ async def confirm(payload: ConfirmPayload):
     return {"ok": True}
 
 
+@app.get("/api/targets")
+async def targets():
+    return {"targets": TARGETS, "last_results": target_last_result}
+
+
 @app.get("/api/status")
 async def status():
     return {
@@ -183,6 +219,7 @@ async def ws_endpoint(websocket: WebSocket):
     connections.add(websocket)
     try:
         await websocket.send_json({"type": "history", "payload": list(history)})
+        await websocket.send_json({"type": "targets", "payload": {"targets": TARGETS, "last_results": target_last_result}})
         while True:
             # L'UI n'envoie rien sur ce canal ; on attend juste la deconnexion.
             await websocket.receive_text()
@@ -207,6 +244,7 @@ def _print_banner():
     print(f" Interface : http://localhost:{CONFIG['port']}/  (ou l'IP de cette tablette sur le wifi)")
     print(f" Cle API pour le Raspberry Pi (rpi_sender) : {CONFIG['api_key']}")
     print(f" (deja enregistree dans {CONFIG_PATH})")
+    print(f" {len(TARGETS)} cibles configurees : {TARGETS[0]['ip']} a {TARGETS[-1]['ip']} (voir targets.py)")
     print("=" * 64)
 
 

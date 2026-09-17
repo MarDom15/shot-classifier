@@ -30,6 +30,35 @@ L'interface est bilingue FR/EN — sélecteur **FR | EN** en haut à droite. Le
 choix est mémorisé dans le navigateur (`localStorage`) et survit à un
 redémarrage de l'app.
 
+## Les 18 cibles
+
+L'interface affiche une grille de **18 boîtes de contrôle**, une par poste
+de tir surveillé, avec une adresse IP fixe chacune (`field_app/targets.py`) :
+
+| Cible | IP | ... | Cible | IP |
+|---|---|---|---|---|
+| 1 | 192.168.0.41 | ... | 18 | 192.168.0.58 |
+
+**L'identification se fait par l'adresse IP source de la requête reçue**,
+pas par une valeur envoyée dans le JSON — un Raspberry Pi mal configuré ne
+peut donc pas usurper l'identité d'une autre cible. Chaque boîte affiche en
+direct : son numéro, son IP, un indicateur coloré (gris = pas de donnée,
+vert = dernier évènement non-tir, rouge = dernier tir détecté) et l'arme le
+cas échéant. Cliquer sur une boîte "épingle" son détail (forme d'onde,
+confiance) dans la carte au-dessus de la grille ; le bouton **✕ Revenir à la
+dernière alerte** repasse en mode "suivre automatiquement le dernier
+évènement, toutes cibles confondues".
+
+Pour changer le nombre de cibles ou la plage d'IP, modifier
+`field_app/targets.py` (`FIRST_OCTET` et `N_TARGETS`) — aucune autre
+modification n'est nécessaire, la grille et le sélecteur du panneau de test
+se génèrent automatiquement à partir de cette liste.
+
+Le panneau **🧪 Test manuel** permet de choisir quelle cible simuler (utile
+pour vérifier que la bonne boîte s'allume) — une requête réelle d'un RPi
+avec une IP hors de la plage 192.168.0.41-58 est acceptée mais étiquetée
+« IP inconnue », pas rejetée (utile pour repérer une IP mal configurée).
+
 ## Lancement en développement (avec Python déjà installé)
 
 ```bash

@@ -28,13 +28,23 @@
   </header>
 
   <main class="layout">
+    <section class="panel targets-panel">
+      <h2 data-i18n="targets_panel_title">Cibles</h2>
+      <p class="hint" data-i18n="targets_hint">Cliquez sur une cible pour voir son détail ci-dessous.</p>
+      <div class="targets-grid" id="targetsGrid"></div>
+    </section>
+
     <section class="status-card" id="statusCard" data-state="idle">
       <div class="status-icon" id="statusIcon">◎</div>
       <div class="status-body">
+        <div class="status-target" id="statusTarget"></div>
         <div class="status-headline" id="statusHeadline" data-i18n="status_headline_idle">AUCUNE DONNÉE REÇUE</div>
         <div class="status-detail" id="statusDetail" data-i18n="status_detail_idle">En attente de la première capture du capteur…</div>
       </div>
-      <div class="status-time" id="statusTime"></div>
+      <div class="status-side">
+        <div class="status-time" id="statusTime"></div>
+        <button type="button" class="btn-unpin" id="statusUnpin" hidden data-i18n="unpin_target">✕ Revenir à la dernière alerte</button>
+      </div>
     </section>
 
     <section class="panel wave-panel">
@@ -49,6 +59,7 @@
           <thead>
             <tr>
               <th data-i18n="th_time">Heure</th>
+              <th data-i18n="th_target">Cible</th>
               <th data-i18n="th_sensor">Capteur</th>
               <th data-i18n="th_result">Résultat</th>
               <th data-i18n="th_weapon">Arme</th>
@@ -57,7 +68,7 @@
             </tr>
           </thead>
           <tbody id="historyBody">
-            <tr class="empty-row"><td colspan="6" data-i18n="empty_history">Aucun évènement pour l'instant.</td></tr>
+            <tr class="empty-row"><td colspan="7" data-i18n="empty_history">Aucun évènement pour l'instant.</td></tr>
           </tbody>
         </table>
       </div>
@@ -90,6 +101,12 @@
       <div class="test-body" id="testBody" hidden>
         <p class="hint" data-i18n="test_hint">Coller 512 octets hexadécimaux séparés par des espaces (ex. issus de l'app de démonstration).</p>
         <textarea id="testInput" rows="4" placeholder="B0 B9 B5 A0 90 81 69 64 ..."></textarea>
+        <div class="test-target-row">
+          <label for="testTarget" data-i18n="test_target_label">Cible à simuler</label>
+          <select id="testTarget">
+            <option value="" data-i18n="test_target_generic">Test générique (aucune cible)</option>
+          </select>
+        </div>
         <div class="test-actions">
           <button id="testSubmit" type="button" class="btn-primary" data-i18n="test_button">Classer cette forme d'onde</button>
           <span id="testError" class="test-error"></span>
