@@ -38,3 +38,15 @@ data/raw/*.zip
 data/processed/*.csv
 models_store/*
 !models_store/.gitkeep
+
+# App terrain (field_app) : artefacts de build PyInstaller (lourds,
+# regeneres par field_app/build/field_app.spec) et config d'instance
+# (contient la cle API generee localement, propre a chaque tablette).
+field_app/build/dist/
+field_app/build/work/
+field_app/instance/
+rpi_sender/instance/
+
+# Script d'installation Python telecharge pour construire l'exe (pas du code).
+*.msi
+python-*-amd64.exe

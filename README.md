@@ -132,6 +132,10 @@ AGENT_INTERVAL_SECONDS=3600 docker compose up -d   # one cycle per hour
 
 In addition to the Python orchestrator above, this repository ships a ready-to-use **Claude Code sub-agent**: [`.claude/agents/shot-classifier-agent.md`](.claude/agents/shot-classifier-agent.md). Open this repository in Claude Code and simply ask, in plain language: *"rerun the ML agent"*, *"retrain the models"*, *"check for drift"*, *"update the project with the new archive"*, etc. — Claude Code automatically invokes this sub-agent (via its `description` field), which runs the necessary commands directly (`python -m src.agent.ml_agent run`, tests, lint...) without waiting for step-by-step confirmation, then reports a structured summary (status, F1 macro per stage, any rollback, anomalies). No extra configuration needed: the file is detected automatically as soon as Claude Code opens the `shot-classifier/` folder.
 
+## Field app (Windows tablet + Raspberry Pi)
+
+For live field use rather than exploration, [`field_app/`](field_app/) is a standalone Windows app (packaged as a self-contained `.exe` with PyInstaller — no Python or Docker needed on the tablet) that receives waveforms from a Raspberry Pi over the local wifi and classifies each one live, with a tactical dark/olive UI built for a tablet screen. [`rpi_sender/`](rpi_sender/) is the matching sender script for the Raspberry Pi side (stdlib only, with a `--simulate` mode to test the whole chain without real sensor hardware). See each folder's README for setup.
+
 ## Monitoring
 
 The **Monitoring** tab of the Streamlit app logs every prediction (`monitoring/prediction_log.jsonl`) and can generate, on demand, a data drift report ([Evidently](https://www.evidentlyai.com/)) comparing the features of the traffic received against the training set:

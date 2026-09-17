@@ -132,6 +132,10 @@ AGENT_INTERVAL_SECONDS=3600 docker compose up -d   # un cycle par heure
 
 En plus de l'orchestrateur Python ci-dessus, ce dépôt fournit un **sub-agent Claude Code** prêt à l'emploi : [`.claude/agents/shot-classifier-agent.md`](.claude/agents/shot-classifier-agent.md). Ouvre ce dépôt dans Claude Code et demande simplement, en langage naturel : *"relance l'agent ML"*, *"ré-entraîne les modèles"*, *"vérifie la dérive"*, *"mets à jour le projet avec la nouvelle archive"*, etc. — Claude Code invoque automatiquement ce sub-agent (grâce à son champ `description`), qui exécute directement les commandes nécessaires (`python -m src.agent.ml_agent run`, tests, lint...) sans attendre de validation étape par étape, puis rapporte un résumé structuré (statut, F1 macro par étage, rollback éventuel, anomalies). Aucune configuration supplémentaire : le fichier est détecté automatiquement dès que Claude Code ouvre le dossier `shot-classifier/`.
 
+## App terrain (tablette Windows + Raspberry Pi)
+
+Pour un usage terrain plutôt que l'exploration, [`field_app/`](field_app/) est une app Windows autonome (empaquetée en `.exe` avec PyInstaller — aucun Python ni Docker requis sur la tablette) qui reçoit les formes d'onde d'un Raspberry Pi sur le wifi commun et classe chaque tir en direct, avec une interface sombre/olive pensée pour un écran de tablette. [`rpi_sender/`](rpi_sender/) est le script d'envoi correspondant côté Raspberry Pi (bibliothèque standard uniquement, avec un mode `--simulate` pour tester toute la chaîne sans capteur réel). Voir le README de chaque dossier pour la mise en place.
+
 ## Monitoring
 
 L'onglet **Monitoring** de l'app Streamlit journalise chaque prédiction (`monitoring/prediction_log.jsonl`) et peut générer à la demande un rapport de dérive des données ([Evidently](https://www.evidentlyai.com/)) comparant les caractéristiques du trafic reçu à celles du jeu d'entraînement :

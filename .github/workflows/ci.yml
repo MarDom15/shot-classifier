@@ -23,7 +23,7 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Lint (ruff)
-        run: ruff check src app tests
+        run: ruff check src app tests field_app rpi_sender
 
       - name: Tests unitaires (parsing, features, labels)
         run: pytest -q tests/test_parse_raw.py tests/test_features.py tests/test_labels.py

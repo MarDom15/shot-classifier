@@ -1,4 +1,4 @@
-.PHONY: install parse features train train-classical train-cnn compare app docker-build docker-up test lint drift
+.PHONY: install parse features train train-classical train-cnn compare app field-app docker-build docker-up test lint drift
 
 install:
 	pip install -r requirements-dev.txt
@@ -36,4 +36,7 @@ test:
 	pytest -q
 
 lint:
-	ruff check src app tests
+	ruff check src app tests field_app rpi_sender
+
+field-app:
+	python field_app/server.py
