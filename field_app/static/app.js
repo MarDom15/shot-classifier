@@ -141,6 +141,7 @@
   const statusDetail = document.getElementById("statusDetail");
   const statusTime = document.getElementById("statusTime");
   const statusUnpin = document.getElementById("statusUnpin");
+  const waveTarget = document.getElementById("waveTarget");
   const historyBody = document.getElementById("historyBody");
   const canvas = document.getElementById("waveCanvas");
   const ctx = canvas.getContext("2d");
@@ -237,6 +238,7 @@
       statusDetail.textContent = t("status_detail_clear", { model: s.stage1_model });
     }
     statusTime.textContent = `${fmtTime(entry.received_at)} · ${agoLabel(entry.received_at)}`;
+    waveTarget.textContent = `${entry.target_label || ""} · ${fmtTime(entry.received_at)}`;
     drawWave(entry.values);
   }
 
@@ -253,6 +255,7 @@
     statusDetail.setAttribute("data-i18n", "status_detail_idle");
     statusDetail.textContent = t("status_detail_idle");
     statusTime.textContent = "";
+    waveTarget.textContent = label ? `${label} — ${t("target_no_data")}` : "";
     drawWave(null);
   }
 

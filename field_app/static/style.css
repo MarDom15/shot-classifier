@@ -243,6 +243,11 @@ body {
   color: var(--khaki-dim);
 }
 
+.wave-target {
+  margin: -6px 0 10px;
+  font-size: 0.82rem;
+  color: var(--khaki-dim);
+}
 .wave-panel canvas {
   width: 100%;
   height: 180px;
