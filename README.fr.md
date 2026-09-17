@@ -9,7 +9,7 @@ Classification de tirs (arme + détection de faux positifs) à partir de signaux
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/)
 
-Le cahier des charges complet (contexte, objectifs, exigences, méthodologie, limites connues, feuille de route) est dans [`CAHIER_DES_CHARGES.md`](CAHIER_DES_CHARGES.md) — à lire en premier pour comprendre les choix de conception.
+Le cahier des charges complet (contexte, objectifs, exigences, méthodologie, limites connues, feuille de route) est dans [`CAHIER_DES_CHARGES.md`](CAHIER_DES_CHARGES.md) — à lire en premier pour comprendre les choix de conception. Pour un manuel opérationnel complet, pas à pas (installation, lancement, chaque composant, pièges rencontrés), voir [`docs/MANUEL_PROJET.md`](docs/MANUEL_PROJET.md) / [`docs/Manuel_Projet_Shot_Classifier.docx`](docs/Manuel_Projet_Shot_Classifier.docx).
 
 ## Le problème
 
