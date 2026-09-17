@@ -217,10 +217,17 @@ python -m src.data.import_field_captures
 
 ## Vérifier que tout fonctionne sans capteur
 
-Le panneau **🧪 Test manuel** de l'interface permet de coller 512 octets
-hexadécimaux (par exemple depuis l'onglet Prédiction de `app/streamlit_app.py`)
-et de déclencher une classification sans matériel — utile pour valider le
-déploiement avant de brancher le vrai capteur.
+Le panneau **🧪 Test manuel** de l'interface permet soit de coller 512 octets
+hexadécimaux (par exemple depuis l'onglet Prédiction de `app/streamlit_app.py`),
+soit d'**importer directement un fichier** (📁) et de déclencher une
+classification sans matériel — utile pour valider le déploiement avant de
+brancher le vrai capteur. Trois formats de fichier acceptés, détectés
+automatiquement :
+- Fichier brut du capteur (`Triggered:XX XX XX ...`), comme dans l'archive
+  d'origine ou un export `field_export.zip`.
+- Une ligne JSON `{"values": [...]}`, comme dans `field_app/data/captures.jsonl`.
+- Texte brut d'octets hexadécimaux séparés par des espaces (même format que
+  le champ de collage).
 
 ## Sécurité et limites
 

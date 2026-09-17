@@ -101,6 +101,11 @@
       <button class="test-toggle" id="testToggle" type="button" data-i18n="test_toggle_closed">🧪 Test manuel (sans capteur) ▾</button>
       <div class="test-body" id="testBody" hidden>
         <p class="hint" data-i18n="test_hint">Coller 512 octets hexadécimaux séparés par des espaces (ex. issus de l'app de démonstration).</p>
+        <div class="test-import-row">
+          <button type="button" class="btn-secondary" id="testImportButton" data-i18n="test_import_button">📁 Importer un fichier</button>
+          <input type="file" id="testFileInput" accept=".txt,.json,.jsonl,.csv" hidden>
+          <span id="testImportName" class="hint"></span>
+        </div>
         <textarea id="testInput" rows="4" placeholder="B0 B9 B5 A0 90 81 69 64 ..."></textarea>
         <div class="test-target-row">
           <label for="testTarget" data-i18n="test_target_label">Cible à simuler</label>

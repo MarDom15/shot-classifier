@@ -34,6 +34,8 @@
       test_toggle_closed: "🧪 Test manuel (sans capteur) ▾",
       test_toggle_open: "🧪 Test manuel (sans capteur) ▴",
       test_hint: "Coller 512 octets hexadécimaux séparés par des espaces (ex. issus de l'app de démonstration).",
+      test_import_button: "📁 Importer un fichier",
+      test_error_import: "Fichier illisible — formats acceptés : .txt brut du capteur (« Triggered:... »), JSON ({\"values\":[...]}), ou octets hexadécimaux séparés par des espaces.",
       test_target_label: "Cible à simuler",
       test_target_generic: "Test générique (aucune cible)",
       test_button: "Classer cette forme d'onde",
@@ -90,6 +92,8 @@
       test_toggle_closed: "🧪 Manual test (no sensor) ▾",
       test_toggle_open: "🧪 Manual test (no sensor) ▴",
       test_hint: "Paste 512 hexadecimal bytes separated by spaces (e.g. from the demo app).",
+      test_import_button: "📁 Import a file",
+      test_error_import: "Unreadable file — accepted formats: raw sensor .txt (\"Triggered:...\"), JSON ({\"values\":[...]}), or hexadecimal bytes separated by spaces.",
       test_target_label: "Target to simulate",
       test_target_generic: "Generic test (no target)",
       test_button: "Classify this waveform",
@@ -148,6 +152,9 @@
   const testToggle = document.getElementById("testToggle");
   const testBody = document.getElementById("testBody");
   const testInput = document.getElementById("testInput");
+  const testImportButton = document.getElementById("testImportButton");
+  const testFileInput = document.getElementById("testFileInput");
+  const testImportName = document.getElementById("testImportName");
   const testTarget = document.getElementById("testTarget");
   const testSubmit = document.getElementById("testSubmit");
   const testError = document.getElementById("testError");
@@ -477,18 +484,60 @@
     testToggle.textContent = t(testToggle.dataset.i18n);
   });
 
+  function parseHexTokens(text) {
+    const values = text.trim().split(/\s+/).filter(Boolean).map((tok) => parseInt(tok, 16));
+    if (!values.length || values.some((v) => Number.isNaN(v))) return null;
+    return values;
+  }
+
+  function parseImportedFile(text) {
+    text = text.trim();
+    // Format capture (captures.jsonl) : une ligne JSON {"values": [...], ...}.
+    if (text.startsWith("{")) {
+      try {
+        const obj = JSON.parse(text.split("\n")[0]);
+        if (Array.isArray(obj.values) && obj.values.every((v) => typeof v === "number")) {
+          return obj.values;
+        }
+      } catch { /* pas du JSON valide sur la premiere ligne, on essaie les autres formats */ }
+    }
+    // Format brut du capteur : "Triggered:XX XX XX ..." (comme dans l'archive
+    // d'origine et les exports de field_app, voir src/data/parse_raw.py).
+    if (text.includes("Triggered:")) {
+      const segments = text.split("Triggered:").map((s) => s.trim()).filter(Boolean);
+      if (segments.length) return parseHexTokens(segments[segments.length - 1]);
+    }
+    // Sinon : meme format que le champ de collage manuel (hex separes par des espaces).
+    return parseHexTokens(text);
+  }
+
+  testImportButton.addEventListener("click", () => testFileInput.click());
+
+  testFileInput.addEventListener("change", async () => {
+    const file = testFileInput.files[0];
+    testFileInput.value = "";
+    if (!file) return;
+    testError.textContent = "";
+    testImportName.textContent = file.name;
+    try {
+      const text = await file.text();
+      const values = parseImportedFile(text);
+      if (!values) throw new Error("parse failed");
+      testInput.value = values.map((v) => v.toString(16).padStart(2, "0").toUpperCase()).join(" ");
+      if (values.length !== 512) {
+        testError.textContent = t("test_error_count", { n: values.length });
+      }
+    } catch {
+      testError.textContent = t("test_error_import");
+    }
+  });
+
   testSubmit.addEventListener("click", async () => {
     testError.textContent = "";
     const raw = testInput.value.trim();
     if (!raw) return;
-    let values;
-    try {
-      values = raw.split(/\s+/).map((tok) => {
-        const n = parseInt(tok, 16);
-        if (Number.isNaN(n)) throw new Error("bad token");
-        return n;
-      });
-    } catch {
+    const values = parseHexTokens(raw);
+    if (!values) {
       testError.textContent = t("test_error_format");
       return;
     }

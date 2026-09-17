@@ -288,6 +288,7 @@ textarea {
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: 0.85rem;
 }
+.test-import-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .test-target-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .test-target-row select {
   background: var(--bg);
