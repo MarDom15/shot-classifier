@@ -37,7 +37,12 @@ Au premier lancement, `instance/config.json` est créé :
 }
 ```
 
-- `host` : adresse IP de la tablette sur le wifi commun.
+- `host` : adresse IP de la **tablette** sur le wifi commun (pas celle du
+  routeur — sur un réseau `192.168.0.0/24`, `192.168.0.1` est presque
+  toujours le routeur, pas la tablette). Voir
+  [`field_app/README.md`](../field_app/README.md#mise-en-réseau-avec-le-raspberry-pi)
+  pour la procédure complète (trouver l'IP de la tablette, ouvrir le
+  pare-feu Windows, tester la connectivité avant de lancer ce script).
 - `api_key` : copier exactement la clé affichée au démarrage de
   `field_app/server.py` (ou lue dans `field_app/instance/config.json`).
 - `sensor_id` : identifiant libre si plusieurs capteurs/RPi sont déployés.

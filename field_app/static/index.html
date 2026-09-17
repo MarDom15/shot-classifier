@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" id="htmlRoot">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -12,12 +12,18 @@
       <span class="brand-mark">◈</span>
       <div class="brand-text">
         <span class="brand-title">SHOT CLASSIFIER</span>
-        <span class="brand-sub">Poste d'écoute terrain</span>
+        <span class="brand-sub" data-i18n="brand_sub">Poste d'écoute terrain</span>
       </div>
     </div>
-    <div class="conn" id="conn">
-      <span class="conn-dot" id="connDot"></span>
-      <span id="connLabel">En attente de connexion…</span>
+    <div class="topbar-right">
+      <div class="lang-switch" id="langSwitch">
+        <button type="button" class="lang-btn" data-lang="fr">FR</button>
+        <button type="button" class="lang-btn" data-lang="en">EN</button>
+      </div>
+      <div class="conn" id="conn">
+        <span class="conn-dot" id="connDot"></span>
+        <span id="connLabel" data-i18n="conn_waiting">En attente de connexion…</span>
+      </div>
     </div>
   </header>
 
@@ -25,45 +31,51 @@
     <section class="status-card" id="statusCard" data-state="idle">
       <div class="status-icon" id="statusIcon">◎</div>
       <div class="status-body">
-        <div class="status-headline" id="statusHeadline">AUCUNE DONNÉE REÇUE</div>
-        <div class="status-detail" id="statusDetail">En attente de la première capture du capteur…</div>
+        <div class="status-headline" id="statusHeadline" data-i18n="status_headline_idle">AUCUNE DONNÉE REÇUE</div>
+        <div class="status-detail" id="statusDetail" data-i18n="status_detail_idle">En attente de la première capture du capteur…</div>
       </div>
       <div class="status-time" id="statusTime"></div>
     </section>
 
     <section class="panel wave-panel">
-      <h2>Dernière forme d'onde</h2>
+      <h2 data-i18n="wave_panel_title">Dernière forme d'onde</h2>
       <canvas id="waveCanvas" width="900" height="220"></canvas>
     </section>
 
     <section class="panel history-panel">
-      <h2>Historique récent</h2>
+      <h2 data-i18n="history_panel_title">Historique récent</h2>
       <div class="table-wrap">
         <table id="historyTable">
           <thead>
-            <tr><th>Heure</th><th>Capteur</th><th>Résultat</th><th>Arme</th><th>Confiance</th></tr>
+            <tr>
+              <th data-i18n="th_time">Heure</th>
+              <th data-i18n="th_sensor">Capteur</th>
+              <th data-i18n="th_result">Résultat</th>
+              <th data-i18n="th_weapon">Arme</th>
+              <th data-i18n="th_confidence">Confiance</th>
+            </tr>
           </thead>
           <tbody id="historyBody">
-            <tr class="empty-row"><td colspan="5">Aucun évènement pour l'instant.</td></tr>
+            <tr class="empty-row"><td colspan="5" data-i18n="empty_history">Aucun évènement pour l'instant.</td></tr>
           </tbody>
         </table>
       </div>
     </section>
 
     <section class="panel test-panel">
-      <button class="test-toggle" id="testToggle" type="button">🧪 Test manuel (sans capteur) ▾</button>
+      <button class="test-toggle" id="testToggle" type="button" data-i18n="test_toggle_closed">🧪 Test manuel (sans capteur) ▾</button>
       <div class="test-body" id="testBody" hidden>
-        <p class="hint">Coller 512 octets hexadécimaux séparés par des espaces (ex. issus de l'app de démonstration).</p>
+        <p class="hint" data-i18n="test_hint">Coller 512 octets hexadécimaux séparés par des espaces (ex. issus de l'app de démonstration).</p>
         <textarea id="testInput" rows="4" placeholder="B0 B9 B5 A0 90 81 69 64 ..."></textarea>
         <div class="test-actions">
-          <button id="testSubmit" type="button" class="btn-primary">Classer cette forme d'onde</button>
+          <button id="testSubmit" type="button" class="btn-primary" data-i18n="test_button">Classer cette forme d'onde</button>
           <span id="testError" class="test-error"></span>
         </div>
       </div>
     </section>
   </main>
 
-  <footer class="foot">
+  <footer class="foot" data-i18n="footer">
     Shot Classifier — prototype de recherche, non qualifié pour un usage opérationnel.
   </footer>
 

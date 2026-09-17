@@ -38,6 +38,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
   padding: 14px 20px;
   border-bottom: 1px solid var(--border);
   background: linear-gradient(180deg, var(--bg-panel-2), var(--bg-panel));
@@ -60,6 +62,35 @@ body {
   color: var(--khaki);
 }
 .brand-sub { font-size: 0.78rem; color: var(--text-dim); letter-spacing: 0.03em; }
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lang-switch {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.lang-btn {
+  background: var(--bg-panel);
+  color: var(--text-dim);
+  border: none;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  min-height: 32px;
+}
+.lang-btn.active {
+  background: var(--olive);
+  color: var(--text);
+}
+.lang-btn:not(.active):hover { color: var(--khaki); }
 
 .conn {
   display: flex;
