@@ -1,5 +1,7 @@
 # 🎯 Shot Classifier
 
+*[English version](README.en.md)*
+
 Classification de tirs (arme + détection de faux positifs) à partir de signaux d'impact capteur bruts, avec comparaison de plusieurs familles de modèles, une app de démonstration, et un pipeline CI/CD — le tout sur des outils gratuits, exécutable en local.
 
 [![CI](https://github.com/MarDom15/shot-classifier/actions/workflows/ci.yml/badge.svg)](https://github.com/MarDom15/shot-classifier/actions/workflows/ci.yml)
@@ -82,6 +84,8 @@ docs/reports/             résultats d'entraînement, graphiques, rapport de dé
 Dockerfile, docker-compose.yml
 CAHIER_DES_CHARGES.md
 ```
+
+> **Note sur les données** : `data/` et `models_store/` ne sont pas inclus dans ce dépôt public — les données sources documentent des essais de tir réels avec du matériel militaire (G36, MP7, P8) et nécessitent une autorisation préalable avant toute diffusion (voir `CAHIER_DES_CHARGES.md`, section 11). Elles sont fournies séparément aux personnes autorisées, et utilisées telles quelles une fois placées dans le dépôt.
 
 ## Pipeline de données
 
