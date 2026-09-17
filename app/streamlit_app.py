@@ -82,7 +82,7 @@ STRINGS = {
         "about_text": """
         Ce démonstrateur fait partie d'un projet de recherche appliquée sur la classification
         de tirs à partir de signaux d'impact capteur (voir `CAHIER_DES_CHARGES.md` et
-        `README.md` à la racine du dépôt pour le contexte complet, les limites connues et
+        `README.fr.md` à la racine du dépôt pour le contexte complet, les limites connues et
         la méthodologie).
 
         **Architecture du modèle** : classification en deux étages — détection tir/non-tir,
@@ -144,7 +144,7 @@ STRINGS = {
         "drift_error": "Could not generate the report: {error}",
         "about_text": """
         This demo is part of an applied research project on classifying shots from
-        sensor impact signals (see `CAHIER_DES_CHARGES.md` and `README.en.md` at the
+        sensor impact signals (see `CAHIER_DES_CHARGES.md` and `README.md` at the
         root of the repository for the full context, known limitations and methodology).
 
         **Model architecture**: two-stage classification — shot/non-shot detection,
