@@ -1,0 +1,86 @@
+{
+  "title": "Shot Classifier",
+  "uid": "shot-classifier",
+  "schemaVersion": 39,
+  "version": 1,
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": { "from": "now-30m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Prédictions par résultat (étage 1)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        { "expr": "sum(rate(shot_classifier_predictions_total[5m])) by (stage1_label)", "legendFormat": "{{stage1_label}}" }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Latence de prédiction (p95)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(shot_classifier_prediction_latency_seconds_bucket[5m])) by (le))", "legendFormat": "p95" }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "F1 macro par étage (agent)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": { "defaults": { "max": 1, "min": 0 } },
+      "targets": [
+        { "expr": "shot_classifier_agent_f1_macro", "legendFormat": "{{stage}}" }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Cycles de l'agent (par statut)",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "sum(shot_classifier_agent_cycles_total) by (status)", "legendFormat": "{{status}}" }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Rollbacks automatiques",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 8 },
+      "targets": [
+        { "expr": "shot_classifier_agent_rollbacks_total" }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Événements dans le jeu de données",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 16 },
+      "targets": [
+        { "expr": "shot_classifier_agent_dataset_events" }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Dernière exécution de l'agent",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 16 },
+      "fieldConfig": { "defaults": { "unit": "dateTimeFromNow" } },
+      "targets": [
+        { "expr": "shot_classifier_agent_last_cycle_timestamp * 1000" }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Prédictions totales par arme",
+      "type": "bargauge",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 16 },
+      "targets": [
+        { "expr": "sum(shot_classifier_predictions_total) by (weapon)", "legendFormat": "{{weapon}}" }
+      ]
+    }
+  ]
+}

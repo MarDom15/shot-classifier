@@ -146,6 +146,17 @@ python -m src.monitoring.drift   # -> docs/reports/drift_report.html
 
 En conditions réelles, la population « courante » du rapport serait remplacée par les caractéristiques recalculées sur les prédictions récentes plutôt que par la session de test — voir le cahier des charges, section monitoring.
 
+### Prometheus + Grafana
+
+`docker compose up` démarre aussi **Prometheus** et **Grafana** — gratuits, auto-hébergés, aucun compte cloud (même exigence NF1 « coût nul d'infrastructure » que le reste du projet) :
+
+- L'app Streamlit expose `/metrics` sur le port 8000 (port hôte 8002, car 8000 est souvent déjà pris) — nombre de prédictions par résultat/arme, latence d'inférence.
+- L'agent expose `/metrics` sur le port 8001 uniquement en mode `watch` (pas `run`, qui s'arrête avant que Prometheus ait pu le scraper) — nombre de cycles par statut, F1 macro par étage, taille du jeu de données, nombre de rollbacks, durée de cycle.
+- **Prometheus** ([http://localhost:9090](http://localhost:9090)) scrape les deux toutes les 15s (`docker/prometheus/prometheus.yml`).
+- **Grafana** ([http://localhost:3000](http://localhost:3000), accès anonyme en lecture activé pour la commodité locale — ne pas exposer ce port en dehors de votre machine) provisionne automatiquement la source de données Prometheus et un tableau de bord **« Shot Classifier »** prêt à l'emploi (`docker/grafana/dashboards/shot-classifier.json`) — aucune configuration manuelle.
+
+À savoir : `/metrics` de l'app ne devient actif qu'une fois que quelqu'un a ouvert l'interface Streamlit au moins une fois (le script Streamlit ne s'exécute que sur une vraie session navigateur, pas une simple requête HTTP) — Prometheus affichera cette cible comme `down` jusque-là. `/metrics` de l'agent est disponible dès le démarrage du conteneur.
+
 ## CI/CD
 
 - **CI** (`.github/workflows/ci.yml`) : lint (ruff), tests unitaires (parsing, features, inférence, **agent** — cycle complet + rollback), ré-exécution complète du pipeline de données et d'entraînement sur chaque push/PR vers `main` — garantit que le projet reste reproductible de bout en bout.

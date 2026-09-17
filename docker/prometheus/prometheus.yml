@@ -1,0 +1,14 @@
+# Configuration Prometheus : scrape les endpoints /metrics exposes par
+# l'app Streamlit (port 8000) et l'agent autonome (port 8001, mode watch
+# uniquement). Noms de service resolus via le reseau interne docker-compose.
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "shot-classifier-app"
+    static_configs:
+      - targets: ["app:8000"]
+
+  - job_name: "shot-classifier-agent"
+    static_configs:
+      - targets: ["agent:8001"]

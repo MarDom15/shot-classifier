@@ -11,6 +11,7 @@ services:
     command: ["streamlit", "run", "app/streamlit_app.py", "--server.address=0.0.0.0", "--server.port=8501"]
     ports:
       - "8501:8501"
+      - "8002:8000"  # /metrics Prometheus (predictions, latence) — 8000 souvent deja pris sur l'hote
     volumes:
       - ./data:/app/data
       - ./models_store:/app/models_store
@@ -30,6 +31,8 @@ services:
     image: shot-classifier:latest
     container_name: shot-classifier-agent
     command: ["python", "-m", "src.agent.ml_agent", "watch", "--interval", "${AGENT_INTERVAL_SECONDS:-21600}"]
+    ports:
+      - "8001:8001"  # /metrics Prometheus (cycles, F1, rollbacks)
     volumes:
       - ./data:/app/data
       - ./models_store:/app/models_store
@@ -37,3 +40,33 @@ services:
       - ./docs/reports:/app/docs/reports
       - ./monitoring:/app/monitoring
     restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: shot-classifier-prometheus
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: shot-classifier-grafana
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+      - ./docker/grafana/dashboards:/etc/grafana/provisioning/dashboards/json:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  prometheus_data:
+  grafana_data:

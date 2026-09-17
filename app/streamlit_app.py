@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -20,10 +21,19 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from src.models.inference import predict_pipeline
+from src.monitoring.metrics import (
+    PREDICTION_LATENCY,
+    PREDICTIONS_TOTAL,
+    start_metrics_server,
+)
 from src.utils.config import DATA_FEATURES, DATA_WAVEFORMS, REPORTS_DIR
 
 LOG_PATH = ROOT / "monitoring" / "prediction_log.jsonl"
 LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+# Streamlit ré-exécute tout ce script à chaque interaction : start_metrics_server
+# ignore silencieusement le cas où le port est déjà pris par un rerun précédent.
+start_metrics_server(8000)
 
 st.set_page_config(page_title="Classification des tirs", page_icon="🎯", layout="wide")
 
@@ -235,7 +245,9 @@ with tab_predict:
 
         if st.button(t("predict_button"), type="primary"):
             with st.spinner(t("predict_spinner")):
+                _predict_start = time.perf_counter()
                 out = predict_pipeline(values)
+                PREDICTION_LATENCY.observe(time.perf_counter() - _predict_start)
 
             col1, col2 = st.columns(2)
             with col1:
@@ -266,10 +278,14 @@ with tab_predict:
             if true_label is not None:
                 st.caption(t("true_label", label=true_label))
 
+            stage1_label = out["stage1"][out["stage1_best"]]["label"]
+            stage2_label = out["stage2"][out["stage2_best"]]["label"] if out["stage2"] else "none"
+            PREDICTIONS_TOTAL.labels(stage1_label=str(stage1_label), weapon=str(stage2_label)).inc()
+
             log_prediction({
                 "source": mode,
                 "true_label": str(true_label) if true_label is not None else None,
-                "stage1_label": out["stage1"][out["stage1_best"]]["label"],
+                "stage1_label": stage1_label,
                 "stage1_model": out["stage1_best"],
                 "stage2_label": out["stage2"][out["stage2_best"]]["label"] if out["stage2"] else None,
                 "stage2_model": out.get("stage2_best"),

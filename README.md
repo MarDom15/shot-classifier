@@ -146,6 +146,17 @@ python -m src.monitoring.drift   # -> docs/reports/drift_report.html
 
 In a real deployment, the report's "current" population would be replaced by features recomputed on recent predictions rather than the test session — see the specification document, monitoring section.
 
+### Prometheus + Grafana
+
+`docker compose up` also starts **Prometheus** and **Grafana** — both free, self-hosted, no cloud account (same NF1 "zero infrastructure cost" as the rest of the stack):
+
+- The Streamlit app exposes `/metrics` on port 8000 (host port 8002, since 8000 is often already taken) — prediction counts by result/weapon, inference latency.
+- The agent exposes `/metrics` on port 8001 in `watch` mode only (not `run`, which is one-shot and exits before Prometheus could scrape it) — cycle count by status, F1 macro per stage, dataset size, rollback count, cycle duration.
+- **Prometheus** ([http://localhost:9090](http://localhost:9090)) scrapes both every 15s (`docker/prometheus/prometheus.yml`).
+- **Grafana** ([http://localhost:3000](http://localhost:3000), anonymous viewer access enabled for local convenience — don't expose this port outside your own machine) auto-provisions the Prometheus datasource and a ready-made **"Shot Classifier"** dashboard (`docker/grafana/dashboards/shot-classifier.json`) — no manual setup.
+
+One thing to know: the app's `/metrics` only comes alive once someone has opened the Streamlit UI at least once (Streamlit only runs its script on a real browser session, not a plain HTTP request) — Prometheus will show that target as `down` until then. The agent's `/metrics` is available as soon as the container starts.
+
 ## CI/CD
 
 - **CI** (`.github/workflows/ci.yml`): lint (ruff), unit tests (parsing, features, inference, **agent** — full cycle + rollback), full re-run of the data and training pipeline on every push/PR to `main` — guarantees the project stays reproducible end to end.

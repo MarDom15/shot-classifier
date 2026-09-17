@@ -32,6 +32,15 @@ from pathlib import Path
 from src.data import features as features_mod
 from src.data.import_field_captures import build_field_archive
 from src.data.parse_raw import parse_zips
+from src.monitoring.metrics import (
+    AGENT_CYCLE_DURATION,
+    AGENT_CYCLES_TOTAL,
+    AGENT_DATASET_EVENTS,
+    AGENT_F1_MACRO,
+    AGENT_LAST_CYCLE_TIMESTAMP,
+    AGENT_ROLLBACKS_TOTAL,
+    start_metrics_server,
+)
 from src.training import compare_models, train_classical, train_cnn
 from src.utils.config import (
     DATA_FEATURES,
@@ -41,6 +50,8 @@ from src.utils.config import (
     REPORTS_DIR,
     ROOT,
 )
+
+METRICS_PORT = 8001
 
 INCOMING_DIR = DATA_RAW.parent / "incoming"
 HISTORY_DIR = MODELS_DIR.parent / "models_store_history"
@@ -198,6 +209,7 @@ def run_once() -> dict:
     et journalisee pour que le mode `watch` puisse continuer a fonctionner."""
     tag = _now_tag()
     _log(f"=== debut du cycle {tag} ===")
+    started = time.perf_counter()
     entry = {"tag": tag, "started_at": tag}
     try:
         entry["dataset"] = build_dataset()
@@ -214,6 +226,16 @@ def run_once() -> dict:
     with open(AGENT_LOG_PATH, "a") as f:
         f.write(json.dumps(entry, ensure_ascii=False, default=str) + "\n")
 
+    AGENT_CYCLES_TOTAL.labels(status=entry["status"]).inc()
+    AGENT_CYCLE_DURATION.observe(time.perf_counter() - started)
+    if entry["status"] == "success":
+        AGENT_LAST_CYCLE_TIMESTAMP.set(time.time())
+        AGENT_DATASET_EVENTS.set(entry["dataset"]["n_events"])
+        for stage, f1 in entry["training"]["new_best_f1"].items():
+            AGENT_F1_MACRO.labels(stage=stage).set(f1)
+        if entry["training"]["rolled_back"]:
+            AGENT_ROLLBACKS_TOTAL.inc()
+
     _log(f"=== fin du cycle {tag} (statut: {entry['status']}) ===")
     return entry
 
@@ -222,7 +244,9 @@ def watch(interval: int = 21600, max_cycles: int | None = None) -> None:
     """Boucle autonome : un cycle complet toutes les `interval` secondes.
     S'arrete apres `max_cycles` cycles si precise (utile pour les tests),
     sinon tourne indefiniment jusqu'a interruption (Ctrl+C / arret du conteneur)."""
-    _log(f"agent demarre en mode watch (intervalle={interval}s). Ctrl+C pour arreter.")
+    start_metrics_server(METRICS_PORT)
+    _log(f"agent demarre en mode watch (intervalle={interval}s, metriques sur :{METRICS_PORT}/metrics). "
+         "Ctrl+C pour arreter.")
     cycles = 0
     while True:
         run_once()
