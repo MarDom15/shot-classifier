@@ -1,10 +1,13 @@
-.PHONY: install parse features train train-classical train-cnn compare app field-app docker-build docker-up test lint drift
+.PHONY: install parse features import-field-data train train-classical train-cnn compare app field-app docker-build docker-up test lint drift
 
 install:
 	pip install -r requirements-dev.txt
 
 parse:
 	python -m src.data.parse_raw
+
+import-field-data:
+	python -m src.data.import_field_captures
 
 features:
 	python -m src.data.features

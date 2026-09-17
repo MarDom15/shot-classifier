@@ -1,3 +1,5 @@
+import math
+
 import pandas as pd
 
 from src.data.features import BASELINE, compute_features
@@ -18,6 +20,19 @@ def test_flat_signal_has_zero_energy_and_no_peak():
     feat = compute_features(df)
     assert feat.loc[0, "energy"] == 0
     assert feat.loc[0, "peak_amplitude"] == 0
+
+
+def test_flat_signal_has_no_nan_skewness_or_kurtosis():
+    """Regression : un signal plat (std=0, ex. capteur deconnecte) rendait
+    scipy.stats.skew/kurtosis NaN, ce que les modeles scikit-learn (ex.
+    LogisticRegression) rejettent avec 'Input X contains NaN' a l'entrainement."""
+    flat = [int(BASELINE)] * 512
+    df = _make_row(flat)
+    feat = compute_features(df)
+    assert not math.isnan(feat.loc[0, "skewness"])
+    assert not math.isnan(feat.loc[0, "kurtosis"])
+    assert feat.loc[0, "skewness"] == 0.0
+    assert feat.loc[0, "kurtosis"] == 0.0
 
 
 def test_single_spike_detected_at_correct_index():

@@ -160,13 +160,31 @@ bouton **Vérifier** : un opérateur confirme (« c'était bien ça ») ou corri
 proposé. Seules les captures avec une entrée correspondante dans
 `confirmations.jsonl` constituent une donnée labellisée exploitable.
 
-Pour effectivement réentraîner les modèles sur ces données de terrain
-vérifiées, il faut les convertir au format attendu par
-`src/data/parse_raw.py` / `data/raw/incoming/` (voir `CAHIER_DES_CHARGES.md`
-section 4) — ce n'est pas automatique aujourd'hui : `captures.jsonl` +
-`confirmations.jsonl` ne portent pas les métadonnées du protocole d'origine
-(distance, mode, session). C'est une extension distincte, pas encore
-construite — demandez si vous voulez qu'on l'ajoute.
+**Ces données de terrain vérifiées alimentent automatiquement le
+réentraînement.** À chaque cycle, l'agent (`src/agent/ml_agent.py`) convertit
+les captures confirmées en une archive compatible avec
+`src/data/parse_raw.py` (`src/data/import_field_captures.py`), déposée dans
+`data/raw/incoming/` comme n'importe quelle autre archive — aucune étape
+manuelle nécessaire une fois l'agent lancé. Les captures non confirmées, ou
+confirmées avec une arme « inconnue/autre », sont ignorées (aucune classe
+fiable à leur attribuer).
+
+Deux limites à garder en tête :
+- Aucune distance ni mode de tir n'est associé aux captures de terrain
+  (contrairement au protocole d'essai d'origine, section 4 du cahier des
+  charges) — elles enrichissent uniquement l'entraînement de l'étage 2
+  (identification de l'arme), pas la méthodologie de validation par
+  distance.
+- Ces captures forment une session `field` à part, toujours ajoutée à
+  l'ensemble d'entraînement, jamais au jeu de test tenu à l'écart (session
+  `19090822`) — la mesure de généralisation du cahier des charges reste donc
+  intacte.
+
+Pour lancer la conversion manuellement (sans passer par l'agent) :
+
+```bash
+python -m src.data.import_field_captures
+```
 
 ## Vérifier que tout fonctionne sans capteur
 

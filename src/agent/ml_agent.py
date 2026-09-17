@@ -30,6 +30,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from src.data import features as features_mod
+from src.data.import_field_captures import build_field_archive
 from src.data.parse_raw import parse_zips
 from src.training import compare_models, train_classical, train_cnn
 from src.utils.config import (
@@ -38,12 +39,20 @@ from src.utils.config import (
     DATA_WAVEFORMS,
     MODELS_DIR,
     REPORTS_DIR,
+    ROOT,
 )
 
 INCOMING_DIR = DATA_RAW.parent / "incoming"
 HISTORY_DIR = MODELS_DIR.parent / "models_store_history"
 AGENT_LOG_DIR = REPORTS_DIR / "agent"
 AGENT_LOG_PATH = AGENT_LOG_DIR / "run_log.jsonl"
+
+# Captures de l'app terrain (field_app/) confirmees par un operateur :
+# reconverties en archive .zip a chaque cycle et deposees dans
+# data/raw/incoming/, pour etre reprises comme n'importe quelle autre
+# archive sans traitement particulier (voir src/data/import_field_captures.py).
+FIELD_DATA_DIR = ROOT / "field_app" / "data"
+FIELD_EXPORT_ZIP = INCOMING_DIR / "field_export.zip"
 
 STAGES = ["stage1_is_shot", "stage2_weapon"]
 
@@ -64,8 +73,21 @@ def discover_source_zips() -> list[Path]:
     return [z for z in zips if z.exists()]
 
 
+def import_field_data() -> dict:
+    """Reconvertit les captures terrain confirmees (field_app/) en archive
+    .zip dans incoming/, si le dossier existe (l'app terrain n'a peut-etre
+    jamais tourne sur cette machine)."""
+    if not FIELD_DATA_DIR.exists():
+        return {"available": False}
+    stats = build_field_archive(FIELD_DATA_DIR, FIELD_EXPORT_ZIP)
+    if stats["included"]:
+        _log(f"donnees terrain importees: {stats['included']} capture(s) confirmee(s) {stats['weapons']}")
+    return {"available": True, **stats}
+
+
 def build_dataset() -> dict:
     """Etape 1 : (re)construit les CSV a partir de toutes les archives sources."""
+    field_import = import_field_data()
     zips = discover_source_zips()
     result = parse_zips(zips)
     DATA_WAVEFORMS.parent.mkdir(parents=True, exist_ok=True)
@@ -80,6 +102,7 @@ def build_dataset() -> dict:
         "n_events": len(result.df),
         "n_anomalies": len(result.anomalies),
         "anomalies": result.anomalies,
+        "field_import": field_import,
     }
     _log(f"dataset reconstruit: {info['n_events']} evenements depuis {info['n_source_archives']} archive(s) "
          f"({info['n_anomalies']} anomalie(s))")

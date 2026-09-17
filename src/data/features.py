@@ -99,9 +99,14 @@ def compute_features(df: pd.DataFrame) -> pd.DataFrame:
     for i in range(len(df)):
         row = arr[i]
         pidx = int(peak_idx[i])
+        std = float(np.nanstd(row))
+        # Signal plat (std=0, ex. capteur deconnecte) : asymetrie/aplatissement
+        # non definis mathematiquement (0/0) -> scipy renvoie NaN, invalide pour
+        # l'entrainement (LogisticRegression etc. rejettent les NaN). 0.0 est la
+        # convention pour "pas de forme distinctive" plutot qu'une valeur manquante.
         feat = {
             "mean": float(np.nanmean(row)),
-            "std": float(np.nanstd(row)),
+            "std": std,
             "min": float(np.nanmin(row)),
             "max": float(np.nanmax(row)),
             "peak_to_peak": float(np.nanmax(row) - np.nanmin(row)),
@@ -112,8 +117,8 @@ def compute_features(df: pd.DataFrame) -> pd.DataFrame:
             "clip_frac": float(np.mean((row <= 1) | (row >= 254))),
             "zero_crossing_rate": float(np.mean(np.diff(np.sign(row - BASELINE)) != 0)),
             "rise_time_idx": _rise_time(row, pidx),
-            "skewness": float(stats.skew(row)),
-            "kurtosis": float(stats.kurtosis(row)),
+            "skewness": float(stats.skew(row)) if std > 0 else 0.0,
+            "kurtosis": float(stats.kurtosis(row)) if std > 0 else 0.0,
         }
         feat.update(_fft_features(row))
         records.append(feat)
