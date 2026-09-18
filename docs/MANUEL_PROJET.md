@@ -283,6 +283,8 @@ Résultat : `field_app/build/dist/ShotClassifierTerrain/` — un dossier complet
 
 **Compatibilité** : Windows 10/11, **processeur x64** uniquement (pas iPad, pas Android, pas garanti sur Windows ARM).
 
+> **Prérequis sur la tablette cible, testé uniquement sur la machine de développement.** PyTorch et les autres bibliothèques natives embarquées ont généralement besoin du **Microsoft Visual C++ Redistributable** (2015-2022) présent sur le système. La plupart des Windows 10/11 récents l'ont déjà (installé par Windows Update), mais ce n'est pas garanti sur une tablette jamais mise à jour. Si l'exe refuse de démarrer (erreur de DLL manquante), l'installer résout le problème : <https://aka.ms/vs/17/release/vc_redist.x64.exe> (gratuit, ~15 Mo, une seule fois).
+
 ## 10.4 Mise en réseau avec le Raspberry Pi
 
 Le sens de la connexion est **RPi → tablette** : le RPi doit connaître l'IP de la tablette.

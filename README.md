@@ -9,7 +9,7 @@ Shot classification (weapon identification + false-positive detection) from raw 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/)
 
-The full specification document (context, objectives, requirements, methodology, known limitations, roadmap) lives in [`CAHIER_DES_CHARGES.md`](CAHIER_DES_CHARGES.md) (French) — read it first to understand the design choices. For a complete step-by-step operations manual (install, run, every component, pitfalls found along the way), see [`docs/MANUEL_PROJET.md`](docs/MANUEL_PROJET.md) / [`docs/Manuel_Projet_Shot_Classifier.docx`](docs/Manuel_Projet_Shot_Classifier.docx) (French).
+The full specification document (context, objectives, requirements, methodology, known limitations, roadmap) lives in [`CAHIER_DES_CHARGES.md`](CAHIER_DES_CHARGES.md) (French) — read it first to understand the design choices. For a complete step-by-step operations manual (install, run, every component, pitfalls found along the way), see [`docs/PROJECT_MANUAL.md`](docs/PROJECT_MANUAL.md) / [`docs/Project_Manual_Shot_Classifier.docx`](docs/Project_Manual_Shot_Classifier.docx) (also available in French: [`docs/MANUEL_PROJET.md`](docs/MANUEL_PROJET.md) / [`docs/Manuel_Projet_Shot_Classifier.docx`](docs/Manuel_Projet_Shot_Classifier.docx)).
 
 ## The problem
 

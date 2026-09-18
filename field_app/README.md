@@ -91,6 +91,17 @@ nécessaire sur la tablette elle-même.
 Double-clic sur `ShotClassifierTerrain.exe` : le navigateur par défaut de
 Windows s'ouvre automatiquement sur l'interface.
 
+> **Prérequis sur la tablette cible** : Windows 10/11 en **x64** (pas iPad,
+> pas Android, pas garanti sur Windows ARM comme le Surface Pro X). Testé
+> uniquement sur la machine de développement — PyTorch et les autres
+> bibliothèques natives embarquées ont généralement besoin du **Microsoft
+> Visual C++ Redistributable** (2015-2022) présent sur le système ; la
+> plupart des Windows 10/11 récents l'ont déjà (installé par Windows
+> Update), mais ce n'est pas garanti sur une tablette jamais mise à jour.
+> Si l'exe refuse de démarrer (erreur de DLL manquante), l'installer
+> résout le problème : <https://aka.ms/vs/17/release/vc_redist.x64.exe>
+> (gratuit, ~15 Mo, une seule fois).
+
 ## Configuration
 
 Au premier lancement (dev ou exe), un fichier `instance/config.json` est créé
