@@ -29,7 +29,8 @@ import random
 import sys
 import time
 from pathlib import Path
-from urllib import error, request
+
+from tablet_client import send_waveform as _send_waveform
 
 APP_DIR = Path(__file__).resolve().parent
 INSTANCE_DIR = APP_DIR / "instance"
@@ -90,30 +91,7 @@ def simulate_waveform() -> list[int]:
 
 
 def send(cfg: dict, values: list[int]) -> None:
-    url = f"http://{cfg['host']}:{cfg['port']}/ingest"
-    body = json.dumps({
-        "values": values,
-        "sensor_id": cfg["sensor_id"],
-        "captured_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-    }).encode("utf-8")
-    req = request.Request(
-        url,
-        data=body,
-        method="POST",
-        headers={"Content-Type": "application/json", "X-API-Key": cfg["api_key"]},
-    )
-    try:
-        with request.urlopen(req, timeout=5) as resp:
-            result = json.loads(resp.read().decode("utf-8"))
-            summary = result.get("result", {})
-            if summary.get("is_shot"):
-                print(f"[{cfg['sensor_id']}] TIR détecté — arme : {summary.get('weapon')}")
-            else:
-                print(f"[{cfg['sensor_id']}] non-tir")
-    except error.HTTPError as e:
-        print(f"Erreur HTTP {e.code} en envoyant vers {url} : {e.read().decode(errors='replace')}", file=sys.stderr)
-    except error.URLError as e:
-        print(f"Impossible de joindre {url} ({e.reason}) — la tablette est-elle sur le meme wifi ?", file=sys.stderr)
+    _send_waveform(cfg["host"], cfg["port"], cfg["api_key"], values, sensor_id=cfg["sensor_id"])
 
 
 def main():

@@ -1,0 +1,4 @@
+# send_waveform.py ne depend que de la bibliotheque standard (voir README).
+# tcp_bridge.py a besoin de Pillow pour decoder les paquets qui sont des
+# images plutot que des echantillons bruts (voir image_digitize.py).
+Pillow>=10
