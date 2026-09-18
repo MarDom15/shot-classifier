@@ -331,7 +331,11 @@ Ces données de terrain vérifiées alimentent **automatiquement** le ré-entra�
 
 ---
 
-# 11. Script d'envoi Raspberry Pi (`rpi_sender/`)
+# 11. Scripts côté Raspberry Pi (`rpi_sender/`)
+
+Deux scripts, selon comment les capteurs livrent leurs données.
+
+## 11.1 `send_waveform.py` — un capteur lu directement sur ce RPi
 
 Ne dépend d'aucun paquet externe (bibliothèque standard uniquement).
 
@@ -345,7 +349,26 @@ python send_waveform.py --host 192.168.0.42 --api-key <clé>
 
 **Ce qui manque pour un usage réel** : la fonction `capture_waveform()` dans `send_waveform.py` est un point d'intégration à compléter avec la lecture matérielle réelle du capteur (ADC, GPIO, port série) — ce dépôt ne contient pas le code d'acquisition d'origine, seulement le pipeline de classification à partir de formes d'onde déjà capturées.
 
-Pour un fonctionnement autonome au démarrage du Raspberry Pi, ajouter ce script à un service `systemd` ou à `@reboot` dans `crontab`.
+## 11.2 `tcp_bridge.py` — plusieurs capteurs relayés par le réseau
+
+Pour le cas réel de ce projet : chaque capteur est relié à son propre boîtier de contrôle à IP fixe (probablement un automate Siemens LOGO! 8), qui envoie ses données par **TCP** vers un Raspberry Pi partagé — celui-ci agrège tout et relaie vers la tablette avec la bonne cible.
+
+```bash
+pip install -r requirements-tcp-bridge.txt   # Pillow, pour décoder les images
+python tcp_bridge.py
+```
+
+**IP fixe de ce Raspberry Pi : `192.168.0.255`** — c'est l'adresse que les boîtiers de contrôle doivent viser. À fixer côté système d'exploitation du RPi (`/etc/dhcpcd.conf`, voir `rpi_sender/README.md` pour la procédure complète), pas dans la configuration Python.
+
+**Protocole confirmé avec le technicien** :
+- TCP, port **9090**.
+- Une connexion transporte **plusieurs messages** à la suite (le boîtier ne se reconnecte pas à chaque forme d'onde) — chaque message est précédé d'un en-tête de 4 octets indiquant sa longueur, puisque les messages sont de taille variable.
+- Chaque capteur est identifié par son **IP source** (table `ip_to_target` dans `rpi_sender/instance/tcp_bridge_config.json`), cohérent avec le fait que chaque boîtier a sa propre IP fixe.
+- Chaque message peut contenir soit 512 octets bruts, soit une **image** de la forme d'onde — détecté et digitalisé automatiquement (`image_digitize.py`, même méthode que l'import d'image de l'app terrain, section 10.5).
+
+Validé de bout en bout : plusieurs formes d'onde (mélange brut/image) envoyées sur une même connexion TCP, toutes reçues, décodées et attribuées à la bonne cible côté tablette.
+
+Pour un fonctionnement autonome au démarrage du Raspberry Pi, ajouter le script utilisé à un service `systemd` ou à `@reboot` dans `crontab`.
 
 ---
 
@@ -433,6 +456,7 @@ Ce projet a été audité et étendu de façon itérative ; plusieurs problèmes
 5. **`/metrics` de Streamlit inactif au démarrage** — le script Streamlit ne s'exécute que sur une vraie session navigateur ; Prometheus affiche la cible comme `down` tant que personne n'a ouvert l'app au moins une fois.
 6. **Port 8000 déjà utilisé** — souvent pris par un autre service sur la machine hôte ; remappé sur le port hôte 8002 (le port interne au réseau Docker, utilisé par Prometheus, reste 8000).
 7. **Historique Git et confidentialité** — supprimer un fichier dans un nouveau commit ne l'efface pas de l'historique Git ; un historique propre (sans les données) a été reconstruit spécifiquement pour la publication.
+8. **Conteneur agent "unhealthy" à tort** — l'agent (`docker-compose.yml`) héritait du `HEALTHCHECK` du Dockerfile qui vérifie le port 8501 (Streamlit), qu'il ne sert pas — il s'affichait `unhealthy` en continu depuis son démarrage bien qu'il fonctionne normalement. Corrigé en ajoutant un healthcheck dédié sur son propre `/metrics` (port 8001).
 
 ---
 

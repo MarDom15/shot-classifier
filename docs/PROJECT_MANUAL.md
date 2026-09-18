@@ -331,7 +331,11 @@ This verified field data **automatically** feeds retraining: on every cycle, the
 
 ---
 
-# 11. Raspberry Pi sender script (`rpi_sender/`)
+# 11. Raspberry Pi-side scripts (`rpi_sender/`)
+
+Two scripts, depending on how the sensors deliver their data.
+
+## 11.1 `send_waveform.py` — one sensor read directly on this RPi
 
 Depends on no external package (standard library only).
 
@@ -345,7 +349,26 @@ python send_waveform.py --host 192.168.0.42 --api-key <key>
 
 **What's missing for real use**: the `capture_waveform()` function in `send_waveform.py` is an integration point to complete with the real hardware reading of the sensor (ADC, GPIO, serial port) — this repository does not contain the original acquisition code, only the classification pipeline from already-captured waveforms.
 
-For unattended operation on Raspberry Pi boot, add this script to a `systemd` service or to `@reboot` in `crontab`.
+## 11.2 `tcp_bridge.py` — several sensors relayed over the network
+
+For this project's real case: each sensor is wired to its own control box with a fixed IP (likely a Siemens LOGO! 8 PLC), which sends its data over **TCP** to a shared Raspberry Pi — which aggregates everything and relays it to the tablet with the right target.
+
+```bash
+pip install -r requirements-tcp-bridge.txt   # Pillow, to decode images
+python tcp_bridge.py
+```
+
+**Fixed IP of this Raspberry Pi: `192.168.0.255`** — this is the address the control boxes must target. Set at the RPi's operating system level (`/etc/dhcpcd.conf`, see `rpi_sender/README.md` for the full procedure), not in the Python configuration.
+
+**Protocol confirmed with the technician**:
+- TCP, port **9090**.
+- One connection carries **several messages** in sequence (the box does not reconnect for every waveform) — each message is prefixed with a 4-byte length header, since messages are variable-sized.
+- Each sensor is identified by its **source IP** (`ip_to_target` table in `rpi_sender/instance/tcp_bridge_config.json`), consistent with each control box having its own fixed IP.
+- Each message can contain either 512 raw bytes or an **image** of the waveform — detected and digitized automatically (`image_digitize.py`, the same method as the field app's image import, section 10.5).
+
+Validated end to end: several waveforms (a mix of raw/image) sent over a single TCP connection, all received, decoded, and attributed to the correct target on the tablet side.
+
+For unattended operation on Raspberry Pi boot, add whichever script is used to a `systemd` service or to `@reboot` in `crontab`.
 
 ---
 
@@ -433,6 +456,7 @@ This project was audited and extended iteratively; several real issues were foun
 5. **Streamlit's `/metrics` inactive at startup** — the Streamlit script only runs on a real browser session; Prometheus shows the target as `down` until someone has opened the app at least once.
 6. **Port 8000 already in use** — often taken by another service on the host machine; remapped to host port 8002 (the port internal to the Docker network, used by Prometheus, stays 8000).
 7. **Git history and confidentiality** — deleting a file in a new commit does not erase it from Git history; a clean history (without the data) was specifically rebuilt for publication.
+8. **Agent container wrongly "unhealthy"** — the agent (`docker-compose.yml`) inherited the Dockerfile's `HEALTHCHECK`, which checks port 8501 (Streamlit) that it does not serve — it showed `unhealthy` continuously since startup despite working normally. Fixed by adding a dedicated healthcheck on its own `/metrics` (port 8001).
 
 ---
 
