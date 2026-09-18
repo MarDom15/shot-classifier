@@ -64,10 +64,16 @@ class IngestPayload(BaseModel):
     values: list[int] = Field(..., description="512 echantillons ADC 8 bits (0-255)")
     sensor_id: str | None = None
     captured_at: str | None = None
+    target_id: int | None = Field(
+        default=None,
+        description="Cible explicite (1-18) — necessaire quand un seul RPi relaie "
+                    "plusieurs cibles (l'IP source ne suffit alors plus a les distinguer). "
+                    "Si absent, la cible est deduite de l'IP source (cas 1 RPi = 1 cible).",
+    )
 
 
 class ManualPredictPayload(IngestPayload):
-    target_id: int | None = None
+    pass
 
 
 class ConfirmPayload(BaseModel):
@@ -149,8 +155,12 @@ def _check_key(x_api_key: str | None) -> None:
 async def ingest(payload: IngestPayload, request: Request, x_api_key: str | None = Header(default=None)):
     """Point d'entree pour un Raspberry Pi : une forme d'onde -> une classification.
 
-    La cible est identifiee par l'IP source de la requete (192.168.0.41-58),
-    pas par une auto-declaration du RPi — voir targets.py."""
+    Deux facons d'identifier la cible, selon le deploiement :
+    - un RPi par cible (IP fixe) : la cible est deduite de l'IP source de la
+      requete (192.168.0.41-58) — c'est le cas historique, voir targets.py ;
+    - un RPi relayant plusieurs cibles : l'IP source ne suffit plus a les
+      distinguer, le RPi doit alors preciser `target_id` (1-18) dans le
+      corps de la requete — utilise en priorite si present."""
     _check_key(x_api_key)
     if len(payload.values) != 512:
         raise HTTPException(status_code=422, detail=f"512 valeurs attendues, {len(payload.values)} recues.")
@@ -161,7 +171,12 @@ async def ingest(payload: IngestPayload, request: Request, x_api_key: str | None
     last_seen = _now()
 
     source_ip = request.client.host if request.client else None
-    target = identify_target(source_ip)
+    if payload.target_id is not None:
+        target = TARGETS_BY_ID.get(payload.target_id)
+        if target is None:
+            raise HTTPException(status_code=422, detail=f"target_id inconnu : {payload.target_id} (attendu 1-18).")
+    else:
+        target = identify_target(source_ip)
     entry = _make_entry(payload.values, payload.sensor_id, payload.captured_at, target, source_ip)
     await _publish(entry)
     return {"ok": True, "result": entry["summary"], "target": target}

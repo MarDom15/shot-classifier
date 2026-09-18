@@ -39,15 +39,24 @@ de tir surveillé, avec une adresse IP fixe chacune (`field_app/targets.py`) :
 |---|---|---|---|---|
 | 1 | 192.168.0.41 | ... | 18 | 192.168.0.58 |
 
-**L'identification se fait par l'adresse IP source de la requête reçue**,
-pas par une valeur envoyée dans le JSON — un Raspberry Pi mal configuré ne
-peut donc pas usurper l'identité d'une autre cible. Chaque boîte affiche en
-direct : son numéro, son IP, un indicateur coloré (gris = pas de donnée,
-vert = dernier évènement non-tir, rouge = dernier tir détecté) et l'arme le
-cas échéant. Cliquer sur une boîte "épingle" son détail (forme d'onde,
-confiance) dans la carte au-dessus de la grille ; le bouton **✕ Revenir à la
-dernière alerte** repasse en mode "suivre automatiquement le dernier
-évènement, toutes cibles confondues".
+**Deux façons d'identifier la cible**, selon le déploiement :
+
+- **Un RPi par cible (IP fixe)** — cas historique : la cible est déduite de
+  l'**adresse IP source** de la requête reçue, pas d'une valeur envoyée dans
+  le JSON — un Raspberry Pi mal configuré ne peut donc pas usurper
+  l'identité d'une autre cible.
+- **Un RPi relaie plusieurs cibles** — l'IP source ne suffit plus à les
+  distinguer : le RPi doit alors préciser explicitement `target_id` (1-18)
+  dans le corps de chaque requête `/ingest`. Si présent, `target_id` est
+  **prioritaire** sur l'IP source. Un `target_id` hors de 1-18 est rejeté
+  (422) ; les envois sans `target_id` retombent sur l'identification par IP.
+
+Chaque boîte affiche en direct : son numéro, son IP, un indicateur coloré
+(gris = pas de donnée, vert = dernier évènement non-tir, rouge = dernier
+tir détecté) et l'arme le cas échéant. Cliquer sur une boîte "épingle" son
+détail (forme d'onde, confiance) dans la carte au-dessus de la grille ; le
+bouton **✕ Revenir à la dernière alerte** repasse en mode "suivre
+automatiquement le dernier évènement, toutes cibles confondues".
 
 Pour changer le nombre de cibles ou la plage d'IP, modifier
 `field_app/targets.py` (`FIRST_OCTET` et `N_TARGETS`) — aucune autre
