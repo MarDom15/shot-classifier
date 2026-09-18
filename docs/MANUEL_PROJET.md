@@ -122,9 +122,9 @@ docker compose logs -f agent
 | App Streamlit (8501) | Aucun |
 | Prometheus (9090) | Aucun |
 | Grafana (3000) — **consulter** | Aucun (accès anonyme activé) |
-| Grafana (3000) — **administrer** | `admin` / `admin` (change de mot de passe demandé à la première connexion admin) |
+| Grafana (3000) — **administrer** | `admin` / `admin` — ⚠️ **à changer immédiatement**, voir ci-dessous |
 
-> **Sécurité.** Aucun de ces services n'a de protection robuste par mot de passe — c'est voulu pour un usage 100 % local. Ne jamais exposer ces ports sur internet sans revoir cette configuration (changer le mot de passe Grafana, désactiver l'accès anonyme, ajouter une authentification Prometheus).
+> **⚠️ Sécurité — ne pas laisser tel quel.** `admin`/`admin` est le mot de passe **par défaut de Grafana**, identique pour toute installation dans le monde — ce n'est pas un secret propre à ce projet, mais le laisser tel quel rend le compte administrateur trivialement accessible à quiconque atteint le port 3000. Grafana impose de le changer à la première connexion admin ; ne pas ignorer cette étape. Plus généralement, aucun des services de cette pile n'a de protection robuste par mot de passe — c'est voulu pour un usage 100 % local. **Ne jamais exposer ces ports sur internet** sans revoir cette configuration (changer le mot de passe Grafana, désactiver l'accès anonyme, ajouter une authentification Prometheus).
 
 ---
 

@@ -122,9 +122,9 @@ docker compose logs -f agent
 | Streamlit app (8501) | None |
 | Prometheus (9090) | None |
 | Grafana (3000) — **viewing** | None (anonymous access enabled) |
-| Grafana (3000) — **administration** | `admin` / `admin` (a password change is prompted on first admin login) |
+| Grafana (3000) — **administration** | `admin` / `admin` — ⚠️ **change this immediately**, see below |
 
-> **Security.** None of these services have robust password protection — this is intentional for a fully local setup. Never expose these ports to the internet without revisiting this configuration (change the Grafana password, disable anonymous access, add Prometheus authentication).
+> **⚠️ Security — do not leave this as-is.** `admin`/`admin` is Grafana's **default password**, identical for every installation everywhere — it is not a secret specific to this project, but leaving it unchanged makes the admin account trivially accessible to anyone who reaches port 3000. Grafana forces a change on first admin login; don't skip that step. More generally, none of the services in this stack have robust password protection — this is intentional for a fully local setup. **Never expose these ports to the internet** without revisiting this configuration (change the Grafana password, disable anonymous access, add Prometheus authentication).
 
 ---
 
