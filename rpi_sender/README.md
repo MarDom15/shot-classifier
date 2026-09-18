@@ -92,7 +92,7 @@ Au premier lancement, `instance/tcp_bridge_config.json` est créé :
   "tablet_port": 8765,
   "api_key": "",
   "listen_host": "0.0.0.0",
-  "listen_port": 9000,
+  "listen_port": 9090,
   "ip_to_target": {
     "192.168.1.101": 1,
     "192.168.1.102": 2
@@ -116,19 +116,19 @@ méthode approximative que le panneau *Test manuel* de l'app terrain, voir
 
 ### ⚠️ Hypothèses par défaut à confirmer avec le technicien
 
-Ce script a été écrit avant d'avoir toutes les précisions sur le protocole
-exact — deux hypothèses raisonnables sont prises par défaut, clairement
-marquées dans le code (`tcp_bridge.py`, en tête de fichier) :
+Confirmé avec le technicien : TCP, port **9090**, une connexion transporte
+**plusieurs messages** à la suite (pas une reconnexion par forme d'onde).
+Comme les messages sont de taille variable (512 octets bruts, ou une image
+de taille quelconque), chacun est précédé d'un **en-tête de 4 octets**
+(entier non signé, big-endian) indiquant sa longueur — convention la plus
+simple pour ce cas, à ajuster dans `_read_frame()` si le système réel utilise
+un autre découpage (délimiteur, taille fixe...).
 
-1. **Identification du capteur par IP source** de la connexion entrante
-   (table `ip_to_target`). Si le système du technicien distingue plutôt les
-   capteurs autrement (port, identifiant dans le message...), adapter
-   `identify_sensor()`.
-2. **Un message = le contenu complet d'une connexion TCP** (le boîtier se
-   connecte, envoie une forme d'onde, ferme la connexion). Si le système
-   réel garde une connexion ouverte pour plusieurs messages à la suite, il
-   faudra ajouter un découpage explicite (longueur préfixée ou délimiteur)
-   dans `handle_connection()`.
+Reste une hypothèse par défaut : **identification du capteur par IP source**
+de la connexion entrante (table `ip_to_target`) — cohérent avec le fait que
+chaque capteur a sa propre IP fixe (boîtier de contrôle dédié). Si le
+système distingue plutôt les capteurs autrement (port, identifiant dans le
+message...), adapter `identify_sensor()`.
 
 ### Tester sans matériel
 
@@ -137,11 +137,20 @@ python tcp_bridge.py --simulate-sensor 127.0.0.1 --interval 2
 ```
 
 Dans un autre terminal, lancer `python tcp_bridge.py` (sans arguments) pour
-qu'il écoute — le capteur simulé s'y connecte et envoie des formes d'onde en
-continu. Ajouter l'IP utilisée (`127.0.0.1` pour un test local) à
-`ip_to_target` dans la configuration pour voir la bonne cible s'allumer côté
-tablette.
+qu'il écoute — le capteur simulé ouvre **une seule connexion** et y envoie
+des formes d'onde encadrées en continu, comme prévu pour le système réel.
+Ajouter l'IP utilisée (`127.0.0.1` pour un test local) à `ip_to_target` dans
+la configuration pour voir la bonne cible s'allumer côté tablette.
 
-Validé de bout en bout pendant le développement : capteur simulé → pont TCP
-→ tablette (cible correctement identifiée), et une image PNG de test → pont
-TCP → digitalisation → tablette (pic retrouvé au bon endroit).
+**⚠️ Si vous testez tout sur une seule machine** (avec la stack Docker
+principale qui tourne aussi, voir README racine) : le port 9090 par défaut
+entre en conflit avec Prometheus, qui l'utilise déjà sur cette même machine
+— ce n'est pas un problème sur le vrai déploiement (le RPi et la machine qui
+fait tourner Prometheus sont deux appareils différents), mais changez
+temporairement `listen_port` pour un test local complet sur un seul PC.
+
+Validé de bout en bout pendant le développement : plusieurs formes d'onde
+envoyées sur la **même connexion** → pont TCP → tablette (toutes reçues,
+correctement décodées, bonne cible identifiée), avec un mélange de
+messages bruts et d'une image PNG de test (pic retrouvé au bon endroit
+après digitalisation).

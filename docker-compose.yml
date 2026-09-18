@@ -40,6 +40,16 @@ services:
       - ./docs/reports:/app/docs/reports
       - ./monitoring:/app/monitoring
     restart: unless-stopped
+    healthcheck:
+      # L'agent ne sert pas Streamlit (port 8501) : sans ce healthcheck
+      # dedie, il herite de celui du Dockerfile qui verifie 8501 et
+      # echoue toujours, marquant le conteneur "unhealthy" a tort. On
+      # verifie plutot son propre endpoint /metrics (mode watch uniquement).
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/metrics')"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
 
   prometheus:
     image: prom/prometheus:latest
