@@ -79,6 +79,34 @@ Pour le cas où chaque capteur est relié à son propre boîtier de contrôle
 données par **TCP** vers ce Raspberry Pi — celui-ci agrège tout et relaie
 vers la tablette avec la bonne cible.
 
+### IP fixe de ce Raspberry Pi : `192.168.0.255`
+
+C'est l'adresse que les boîtiers de contrôle (technicien) doivent viser
+pour se connecter à ce pont. À fixer **sur le système du RPi lui-même**
+(pas dans la config Python) :
+
+```bash
+sudo nano /etc/dhcpcd.conf
+```
+
+Ajouter à la fin (adapter `eth0` en `wlan0` si le RPi est en wifi, et
+`192.168.0.1` si la passerelle/routeur a une autre adresse) :
+
+```
+interface eth0
+static ip_address=192.168.0.255/24
+static routers=192.168.0.1
+```
+
+Puis `sudo reboot`. Vérifier ensuite avec `ip addr show eth0`.
+
+> **Note technique, pour mémoire** : sur un réseau `192.168.0.0/24`
+> standard (masque `/24`, le plus courant), `.255` est réservée comme
+> adresse de diffusion (broadcast) et n'est normalement pas assignable à
+> un appareil — si le pont ne reçoit rien malgré une configuration
+> correcte des boîtiers, c'est le premier point à vérifier avec la
+> personne qui gère le réseau (masque de sous-réseau réellement utilisé).
+
 ```bash
 pip install -r requirements-tcp-bridge.txt   # Pillow, pour decoder les images
 python tcp_bridge.py
